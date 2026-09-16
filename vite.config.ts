@@ -15,5 +15,6 @@ export default defineConfig(({ mode }) => {
         supabaseKey: env.VITE_SUPABASE_ANON_KEY ?? "",
       }),
     ],
+    base: process.env.GITHUB_PAGES === "true" ? "/daddy-gallery/" : "/",
   };
 });
