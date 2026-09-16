@@ -1,0 +1,121 @@
+import { useEffect, useState } from "react";
+import type { GalleryItem } from "./data/gallery";
+import { AboutPage } from "./components/AboutPage";
+import { Footer } from "./components/Footer";
+import { GalleryGrid } from "./components/GalleryGrid";
+import { Header, type PageId } from "./components/Header";
+import { Hero } from "./components/Hero";
+import { PhotoDetail } from "./components/PhotoDetail";
+import { useGalleryItems } from "./hooks/useGalleryItems";
+
+export default function App() {
+  const { items, loading, error } = useGalleryItems();
+  const [page, setPage] = useState<PageId>("home");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const selectedIndex = items.findIndex((item) => item.id === selectedId);
+  const selectedItem = selectedIndex >= 0 ? items[selectedIndex] : null;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    if (view === "gallery" || view === "about" || view === "home") {
+      setPage(view);
+    }
+  }, []);
+
+  useEffect(() => {
+    const photo = new URLSearchParams(window.location.search).get("photo");
+    if (photo && items.some((item) => item.id === photo)) {
+      setSelectedId(photo);
+    }
+  }, [items]);
+
+  function setPhotoInUrl(id: string | null) {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set("photo", id);
+    else url.searchParams.delete("photo");
+    window.history.replaceState({}, "", url);
+  }
+
+  function setViewInUrl(next: PageId) {
+    const url = new URL(window.location.href);
+    if (next === "home") url.searchParams.delete("view");
+    else url.searchParams.set("view", next);
+    window.history.replaceState({}, "", url);
+  }
+
+  function openGallery() {
+    setPage("home");
+    window.setTimeout(() => {
+      document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" });
+    }, 40);
+  }
+
+  function navigate(next: PageId) {
+    setPage(next);
+    setViewInUrl(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function selectItem(item: GalleryItem) {
+    setSelectedId(item.id);
+    setPhotoInUrl(item.id);
+  }
+
+  function closeItem() {
+    setSelectedId(null);
+    setPhotoInUrl(null);
+  }
+
+  function showPrev() {
+    if (items.length === 0 || selectedIndex < 0) return;
+    const next = (selectedIndex - 1 + items.length) % items.length;
+    setSelectedId(items[next].id);
+    setPhotoInUrl(items[next].id);
+  }
+
+  function showNext() {
+    if (items.length === 0 || selectedIndex < 0) return;
+    const next = (selectedIndex + 1) % items.length;
+    setSelectedId(items[next].id);
+    setPhotoInUrl(items[next].id);
+  }
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-cream pb-[env(safe-area-inset-bottom)]">
+      <Header page={page} onNavigate={navigate} />
+
+      {page === "about" ? (
+        <AboutPage onExplore={() => navigate("gallery")} />
+      ) : (
+        <>
+          {page === "home" ? (
+            <Hero
+              onExplore={openGallery}
+              photos={items.slice(0, 3).map((item) => item.image)}
+            />
+          ) : null}
+          <GalleryGrid
+            items={items}
+            onSelect={selectItem}
+            heading={page === "gallery" ? "Tất cả tranh" : undefined}
+            loading={loading}
+            error={error}
+          />
+        </>
+      )}
+
+      <Footer />
+
+      {selectedItem ? (
+        <PhotoDetail
+          item={selectedItem}
+          onClose={closeItem}
+          onPrev={showPrev}
+          onNext={showNext}
+        />
+      ) : null}
+    </div>
+  );
+}
