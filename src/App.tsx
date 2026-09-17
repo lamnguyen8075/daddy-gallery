@@ -90,16 +90,11 @@ export default function App() {
         <AboutPage onExplore={() => navigate("gallery")} />
       ) : (
         <>
-          {page === "home" ? (
-            <Hero
-              onExplore={openGallery}
-              photos={items.slice(0, 3).map((item) => item.image)}
-            />
-          ) : null}
+          {page === "home" ? <Hero onExplore={openGallery} /> : null}
           <GalleryGrid
             items={items}
             onSelect={selectItem}
-            heading={page === "gallery" ? "Tất cả tranh" : undefined}
+            heading={page === "gallery" ? "Tất cả tác phẩm" : undefined}
             loading={loading}
             error={error}
           />

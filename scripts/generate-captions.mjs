@@ -125,15 +125,15 @@ async function describeImage(imageUrl) {
             {
               type: "text",
               text: [
-                'Đây là ảnh trong "Phòng tranh của Ba", nơi lưu những món thủ công Ba làm ở nhà.',
-                "Viết chân thành, gần gũi. Có chỗ cho tình yêu, gia đình, quê hương, sự giản dị.",
-                "Nói như người nhà nói chuyện. Đừng sướt mướt, đừng nhớ nhung, đừng như hồi ký.",
-                "Không dùng: kỷ niệm, nhớ lại, nhớ nhung, ngày xưa, giữ mãi, lời nhắn.",
-                "Không viết hộ nỗi nhớ của Ba.",
+                "Đây là một triển lãm nghệ thuật thủ công vui, tươi. Viết như chú thích treo tường trong phòng trưng bày.",
+                "Giọng vui, nhẹ, thích thú với món đồ. Như đang xem tác phẩm, không phải đang nhớ ai.",
+                "Không sướt mướt, không hoài niệm, không hồi ký, không cảm động.",
+                "Không nhắc: Ba, Má, mẹ, bố, gia đình, quê hương, nhà, người thân, kỷ niệm, nhớ, ngày xưa, giữ mãi.",
+                "Tả màu, hình dáng, chất liệu, và cái hay của tác phẩm.",
                 "Trả về JSON thuần, không markdown, đúng dạng:",
                 '{"title":"...","description":"..."}',
-                "title: 3 đến 8 chữ tiếng Việt, gọi món đồ, giọng nhẹ.",
-                "description: đúng 2 hoặc 3 câu. Tả món đồ, rồi nói giản dị về nhà, người thân, hoặc quê. Không gạch đầu dòng, không emoji, không lời dẫn.",
+                "title: 3 đến 8 chữ tiếng Việt, gọi món đồ, vui và rõ.",
+                "description: đúng 2 hoặc 3 câu. Chỉ nói về tác phẩm. Không gạch đầu dòng, không emoji, không lời dẫn.",
               ].join(" "),
             },
             {
@@ -172,30 +172,33 @@ async function withRetry(task, attempts = 3) {
   throw lastError;
 }
 
+const force = process.argv.includes("--force");
 const photos = await listPhotos();
-const disk = readDiskStore();
+const disk = force ? {} : readDiskStore();
 let skipped = 0;
 let fromDisk = 0;
 let generated = 0;
 let failed = 0;
 
-console.log(`Found ${photos.length} photos`);
+console.log(`Found ${photos.length} photos${force ? " (regenerating all)" : ""}`);
 
 for (const [index, photo] of photos.entries()) {
   const n = `${index + 1}/${photos.length}`;
-  const existing = await readStoredCaption(photo.id);
-  if (existing) {
-    skipped += 1;
-    console.log(`[${n}] skip ${existing.title}`);
-    continue;
-  }
+  if (!force) {
+    const existing = await readStoredCaption(photo.id);
+    if (existing) {
+      skipped += 1;
+      console.log(`[${n}] skip ${existing.title}`);
+      continue;
+    }
 
-  const local = disk[photo.id];
-  if (local?.title && local.description) {
-    await saveCaption(photo.id, photo.image, { title: local.title, description: local.description });
-    fromDisk += 1;
-    console.log(`[${n}] stored ${local.title}`);
-    continue;
+    const local = disk[photo.id];
+    if (local?.title && local.description) {
+      await saveCaption(photo.id, photo.image, { title: local.title, description: local.description });
+      fromDisk += 1;
+      console.log(`[${n}] stored ${local.title}`);
+      continue;
+    }
   }
 
   try {

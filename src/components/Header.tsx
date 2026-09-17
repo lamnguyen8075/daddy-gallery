@@ -1,5 +1,3 @@
-import { LeafMark } from "./LeafMark";
-
 export type PageId = "home" | "gallery" | "about";
 
 type HeaderProps = {
@@ -9,7 +7,7 @@ type HeaderProps = {
 
 const navItems: { id: PageId; label: string }[] = [
   { id: "home", label: "Trang chủ" },
-  { id: "gallery", label: "Tranh" },
+  { id: "gallery", label: "Tác phẩm" },
   { id: "about", label: "Giới thiệu" },
 ];
 
@@ -22,13 +20,17 @@ export function Header({ page, onNavigate }: HeaderProps) {
           onClick={() => onNavigate("home")}
           className="flex min-w-0 items-center gap-2 text-left"
         >
-          <LeafMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+          <img
+            src={`${import.meta.env.BASE_URL}craven-pack-sketch.png`}
+            alt=""
+            className="h-11 w-auto shrink-0 sm:h-[3.25rem]"
+          />
           <span className="min-w-0 leading-none">
             <span className="font-script block text-[22px] leading-tight text-ink sm:text-[30px] lg:text-[34px]">
               Phòng tranh của Ba
             </span>
             <span className="mt-1 block font-serif text-[12px] tracking-[0.04em] text-ink-soft sm:text-[13px] sm:tracking-[0.12em]">
-              Tranh thủ công Ba làm
+              Thủ công quê nhà
             </span>
           </span>
         </button>

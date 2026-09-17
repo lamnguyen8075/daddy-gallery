@@ -29,7 +29,7 @@ export function GalleryGrid({
           </div>
         ) : (
           <p className="mb-5 font-serif text-base italic text-ink-soft sm:mb-7 sm:text-lg">
-            Những món Ba làm
+            Những món gần nhà
           </p>
         )}
 

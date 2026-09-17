@@ -22,7 +22,7 @@ type Caption = {
 const fallbackCaption: Caption = {
   title: "Món đồ của nhà",
   description:
-    "Một món thủ công Ba làm bằng tay. Để gần gia đình, như những việc giản dị mỗi ngày.",
+    "Một món thủ công làm bằng tay. Xem cho vui, như trong phòng trưng bày.",
 };
 
 export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps) {
@@ -155,7 +155,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
           <CornerFlourish className="pointer-events-none absolute right-4 top-4 h-12 w-12 text-gold/70 sm:right-5 sm:top-5 sm:h-16 sm:w-16" />
           <div className="flex items-center gap-3">
             <LeafMark className="h-8 w-8 sm:h-9 sm:w-9" />
-            <p className="font-hand text-[20px] leading-none text-script sm:text-[24px]">Tác phẩm của Ba</p>
+            <p className="font-hand text-[20px] leading-none text-script sm:text-[24px]">Thủ công nhà mình</p>
           </div>
 
           {loading ? (
