@@ -21,7 +21,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
-    if (view === "clicks") setPage("analytics");
+    if (view === "nhatky" || view === "clicks") setPage("analytics");
     else if (view === "gallery" || view === "about" || view === "home") {
       setPage(view);
     }
@@ -48,7 +48,7 @@ export default function App() {
   function setViewInUrl(next: AppPage) {
     const url = new URL(window.location.href);
     if (next === "home") url.searchParams.delete("view");
-    else if (next === "analytics") url.searchParams.set("view", "clicks");
+    else if (next === "analytics") url.searchParams.set("view", "nhatky");
     else url.searchParams.set("view", next);
     window.history.replaceState({}, "", url);
   }

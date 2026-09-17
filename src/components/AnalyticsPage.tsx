@@ -64,24 +64,32 @@ function clickLabel(row: ClickRow, items: GalleryItem[]) {
 
 export function AnalyticsPage({ items }: AnalyticsPageProps) {
   const [rows, setRows] = useState<ClickRow[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
+  async function load(silent = false) {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
-      setRows(await fetchClicks());
+      const result = await fetchClicks();
+      setRows(result.rows);
+      setTotal(result.total);
+      setError(null);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Không đọc được lượt bấm.";
       setError(message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    const timer = window.setInterval(() => void load(true), 4000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const days = useMemo(() => lastDays(DAY_COUNT), []);
@@ -128,35 +136,46 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
 
         {error ? (
           <p className="mt-8 rounded-2xl bg-sand px-4 py-5 text-ink-soft">
-            Chưa đọc được bảng clicks. Trong SQL editor, chạy thêm phần cấp quyền đọc ở
-            file <span className="text-ink">supabase/clicks.sql</span>.
+            Chưa đọc được nhật ký. Trong SQL editor, chạy file{" "}
+            <span className="text-ink">supabase/nhatky.sql</span>
+            {error ? ` (${error})` : ""}.
           </p>
         ) : null}
 
         <div className="mt-8 grid grid-cols-3 gap-3">
-          <Stat label="Tổng" value={loading ? "…" : String(rows.length)} />
+          <Stat label="Tổng" value={loading ? "…" : String(total)} />
           <Stat label="Hôm nay" value={loading ? "…" : String(todayCount)} />
           <Stat label="Ảnh" value={loading ? "…" : String(photoCount)} />
         </div>
 
         <div className="mt-8 rounded-3xl bg-paper px-4 py-5 shadow-[0_0_0_1px_rgba(240,224,196,0.95)] sm:px-6">
           <p className="text-sm text-ink-soft">14 ngày gần đây</p>
-          <div className="mt-5 flex h-40 items-end gap-1.5 sm:gap-2">
-            {byDay.map((entry) => (
-              <div key={entry.day} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-                <div className="flex h-32 w-full items-end">
-                  <div
-                    className="w-full rounded-t-md bg-leaf"
-                    style={{ height: `${Math.max(entry.count ? 8 : 2, (entry.count / maxDay) * 100)}%` }}
-                    title={`${formatDayLabel(entry.day)}: ${entry.count}`}
-                  />
+          {total === 0 ? (
+            <p className="mt-4 text-ink-soft">
+              Chưa ghi được lượt bấm. Bấm một ảnh hoặc nút menu, chờ vài giây.
+            </p>
+          ) : (
+            <div className="mt-5 flex h-44 items-end gap-1.5 sm:gap-2">
+              {byDay.map((entry) => (
+                <div key={entry.day} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <span className="text-[10px] text-ink">{entry.count || ""}</span>
+                  <div className="flex h-32 w-full items-end">
+                    <div
+                      className="w-full rounded-t-md bg-leaf"
+                      style={{
+                        height: entry.count ? `${Math.max(10, (entry.count / maxDay) * 100)}%` : "2px",
+                        opacity: entry.count ? 1 : 0.25,
+                      }}
+                      title={`${formatDayLabel(entry.day)}: ${entry.count}`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-ink-soft sm:text-[11px]">
+                    {formatDayLabel(entry.day)}
+                  </span>
                 </div>
-                <span className="text-[10px] text-ink-soft sm:text-[11px]">
-                  {formatDayLabel(entry.day)}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-8 rounded-3xl bg-paper px-4 py-5 shadow-[0_0_0_1px_rgba(240,224,196,0.95)] sm:px-6">
