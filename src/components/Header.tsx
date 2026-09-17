@@ -1,7 +1,8 @@
 export type PageId = "home" | "gallery" | "about";
+export type AppPage = PageId | "analytics";
 
 type HeaderProps = {
-  page: PageId;
+  page: AppPage;
   onNavigate: (page: PageId) => void;
 };
 
