@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
         apiKey: env.MINIMAX_API_KEY ?? "",
         supabaseUrl: env.VITE_SUPABASE_URL ?? "",
         supabaseKey: env.VITE_SUPABASE_ANON_KEY ?? "",
+        bucket: env.VITE_SUPABASE_BUCKET || "handmade",
       }),
     ],
     base: process.env.GITHUB_PAGES === "true" ? "/daddy-gallery/" : "/",

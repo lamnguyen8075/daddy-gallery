@@ -12,40 +12,26 @@ create policy "Public can view handmade images"
   to public
   using (bucket_id = 'handmade');
 
--- Captions generated once by MiniMax, then reused.
-create table if not exists public.photo_captions (
-  id text primary key,
-  title text not null,
-  description text not null,
-  image text,
-  prompt_version int not null default 1,
-  created_at timestamptz not null default now()
-);
-
-alter table public.photo_captions add column if not exists prompt_version int not null default 1;
-
-alter table public.photo_captions enable row level security;
-
-drop policy if exists "Public can read photo captions" on public.photo_captions;
-create policy "Public can read photo captions"
-  on public.photo_captions
-  for select
-  to public
-  using (true);
-
-drop policy if exists "Public can insert photo captions" on public.photo_captions;
-create policy "Public can insert photo captions"
-  on public.photo_captions
+drop policy if exists "Public can write handmade captions" on storage.objects;
+create policy "Public can write handmade captions"
+  on storage.objects
   for insert
   to public
-  with check (true);
+  with check (
+    bucket_id = 'handmade'
+    and name like 'captions/%'
+  );
 
-drop policy if exists "Public can update photo captions" on public.photo_captions;
-create policy "Public can update photo captions"
-  on public.photo_captions
+drop policy if exists "Public can update handmade captions" on storage.objects;
+create policy "Public can update handmade captions"
+  on storage.objects
   for update
   to public
-  using (true)
-  with check (true);
-
-grant select, insert, update on public.photo_captions to anon, authenticated;
+  using (
+    bucket_id = 'handmade'
+    and name like 'captions/%'
+  )
+  with check (
+    bucket_id = 'handmade'
+    and name like 'captions/%'
+  );

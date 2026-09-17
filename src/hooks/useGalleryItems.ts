@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { GalleryItem } from "../data/gallery";
+import { prefetchStoredCaptions } from "../lib/captionStore";
 import { fetchGalleryItems } from "../lib/gallery";
 
 export function useGalleryItems() {
@@ -15,7 +16,10 @@ export function useGalleryItems() {
       setError(null);
       try {
         const next = await fetchGalleryItems();
-        if (!cancelled) setItems(next);
+        if (!cancelled) {
+          setItems(next);
+          void prefetchStoredCaptions();
+        }
       } catch (caught) {
         if (!cancelled) {
           setItems([]);

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import type { GalleryItem } from "../data/gallery";
-import { supabase } from "../lib/supabase";
+import {
+  fetchStoredCaption,
+  getCachedCaption,
+  setCachedCaption,
+} from "../lib/captionStore";
 import { LeafMark } from "./LeafMark";
 
 type PhotoDetailProps = {
@@ -22,8 +26,10 @@ const fallbackCaption: Caption = {
 };
 
 export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps) {
-  const [caption, setCaption] = useState<Caption | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [caption, setCaption] = useState<Caption | null>(() => getCachedCaption(item.id));
+  const [captionId, setCaptionId] = useState(item.id);
+  const shown = getCachedCaption(item.id) ?? (captionId === item.id ? caption : null);
+  const loading = !shown;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -41,36 +47,24 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const cached = getCachedCaption(item.id);
+    if (cached) {
+      setCaption(cached);
+      setCaptionId(item.id);
+      return;
+    }
+
     setCaption(null);
+    setCaptionId(item.id);
 
     void (async () => {
       try {
-        if (supabase) {
-          const { data } = await supabase
-            .from("photo_captions")
-            .select("title, description")
-            .eq("id", item.id)
-            .maybeSingle();
-          if (!cancelled && data?.title && data.description) {
-            setCaption({ title: data.title, description: data.description });
-            setLoading(false);
-            return;
-          }
-        }
-
-        const cached = await fetch(`/api/describe?id=${encodeURIComponent(item.id)}`);
-        if (cached.ok) {
-          const data = (await cached.json()) as Partial<Caption>;
-          const next = {
-            title: data.title?.trim() ?? "",
-            description: data.description?.trim() ?? "",
-          };
-          if (next.title && next.description && !cancelled) {
-            setCaption(next);
-            setLoading(false);
-            return;
-          }
+        const stored = await fetchStoredCaption(item.id);
+        if (cancelled) return;
+        if (stored) {
+          setCaption(stored);
+          setCaptionId(item.id);
+          return;
         }
 
         const response = await fetch("/api/describe", {
@@ -85,11 +79,14 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
           description: data.description?.trim() ?? "",
         };
         if (!next.title || !next.description || cancelled) return;
+        setCachedCaption(item.id, next);
         setCaption(next);
+        setCaptionId(item.id);
       } catch {
-        if (!cancelled) setCaption(fallbackCaption);
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setCaption(fallbackCaption);
+          setCaptionId(item.id);
+        }
       }
     })();
 
@@ -98,8 +95,8 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
     };
   }, [item.id, item.image]);
 
-  const title = caption?.title ?? "";
-  const description = caption?.description ?? "";
+  const title = shown?.title ?? "";
+  const description = shown?.description ?? "";
 
   return (
     <div
@@ -158,7 +155,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
           <CornerFlourish className="pointer-events-none absolute right-4 top-4 h-12 w-12 text-gold/70 sm:right-5 sm:top-5 sm:h-16 sm:w-16" />
           <div className="flex items-center gap-3">
             <LeafMark className="h-8 w-8 sm:h-9 sm:w-9" />
-            <p className="font-hand text-[20px] leading-none text-script sm:text-[24px]">Thủ công của Ba</p>
+            <p className="font-hand text-[20px] leading-none text-script sm:text-[24px]">Tác phẩm của Ba</p>
           </div>
 
           {loading ? (
@@ -170,7 +167,9 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
                 <div className="h-4 w-[92%] animate-pulse rounded bg-sand" />
                 <div className="h-4 w-3/4 animate-pulse rounded bg-sand" />
               </div>
-              <p className="font-serif text-sm italic text-ink-soft">Đang xem món này...</p>
+              <p className="font-serif text-sm italic text-ink-soft">
+                Tải nội dung
+              </p>
             </div>
           ) : (
             <>
@@ -188,10 +187,6 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
               <p className="font-serif text-[17px] leading-7 text-ink sm:text-[19px] sm:leading-8">{description}</p>
             </>
           )}
-
-          <p className="font-script mt-auto pt-6 text-[24px] leading-none text-ink sm:mt-8 sm:text-[30px]">
-            Phòng tranh của Ba
-          </p>
         </div>
       </article>
     </div>

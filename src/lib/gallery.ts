@@ -18,6 +18,7 @@ export async function fetchGalleryItems(): Promise<GalleryItem[]> {
 
   for (const entry of root) {
     if (isFolder(entry)) {
+      if (entry.name === "captions") continue;
       await addImagesFromFolder(entry.name, categoryFromFolder(entry.name), items);
       continue;
     }

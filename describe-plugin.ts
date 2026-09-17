@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Plugin } from "vite";
+import { captionObjectPath } from "./src/lib/captions";
 
 type DescribeBody = {
   id?: string;
@@ -20,6 +21,7 @@ type DescribeOptions = {
   apiKey: string;
   supabaseUrl: string;
   supabaseKey: string;
+  bucket: string;
 };
 
 export function describePlugin(options: DescribeOptions): Plugin {
@@ -29,24 +31,31 @@ export function describePlugin(options: DescribeOptions): Plugin {
       : null;
 
   async function handleGet(req: import("http").IncomingMessage, res: import("http").ServerResponse) {
-    const id = new URL(req.url ?? "", "http://localhost").searchParams.get("id");
-    if (!id) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Missing photo" }));
-      return;
-    }
+    try {
+      const id = requestUrl(req).searchParams.get("id");
+      if (!id) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: "Missing photo" }));
+        return;
+      }
 
-    const cached = (await readCaption(db, id)) ?? readDiskCaption(id);
-    if (!cached) {
-      res.statusCode = 404;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Not found" }));
-      return;
-    }
+      const cached = (await readCaption(db, options.bucket, id)) ?? readDiskCaption(id);
+      if (!cached) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: "Not found" }));
+        return;
+      }
 
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ ...cached, cached: true }));
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ...cached, cached: true }));
+    } catch (error) {
+      console.error("[describe] get", error);
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ error: "Could not read caption" }));
+    }
   }
 
   async function handleDescribe(req: import("http").IncomingMessage, res: import("http").ServerResponse) {
@@ -72,17 +81,17 @@ export function describePlugin(options: DescribeOptions): Plugin {
         return;
       }
 
-      let cached = await readCaption(db, body.id);
+      let cached = await readCaption(db, options.bucket, body.id);
       if (!cached) cached = readDiskCaption(body.id);
       if (cached) {
-        if (db) await saveCaption(db, body.id, body.image, cached);
+        if (db) await saveCaption(db, options.bucket, body.id, body.image, cached);
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ ...cached, cached: true }));
         return;
       }
 
       const caption = await describeImage(options.apiKey, body.image);
-      const saved = await saveCaption(db, body.id, body.image, caption);
+      const saved = await saveCaption(db, options.bucket, body.id, body.image, caption);
       writeDiskCaption(body.id, caption);
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ ...caption, cached: false, saved }));
@@ -119,6 +128,11 @@ export function describePlugin(options: DescribeOptions): Plugin {
   };
 }
 
+function requestUrl(req: import("http").IncomingMessage) {
+  const originalUrl = (req as { originalUrl?: string }).originalUrl;
+  return new URL(originalUrl || req.url || "/", "http://localhost");
+}
+
 function readBody(req: import("http").IncomingMessage) {
   return new Promise<string>((resolve, reject) => {
     const chunks: Uint8Array[] = [];
@@ -139,41 +153,37 @@ function readBody(req: import("http").IncomingMessage) {
   });
 }
 
-async function readCaption(db: SupabaseClient | null, id: string) {
+async function readCaption(db: SupabaseClient | null, bucket: string, id: string) {
   if (!db) return null;
-  const { data, error } = await db
-    .from("photo_captions")
-    .select("title, description")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) {
-    if (!error.message.includes("photo_captions")) {
-      console.error("[describe] read caption", error.message);
-    }
+  const { data, error } = await db.storage.from(bucket).download(captionObjectPath(id));
+  if (error || !data) return null;
+  try {
+    const parsed = JSON.parse(await data.text()) as { title?: string; description?: string };
+    if (!parsed.title || !parsed.description) return null;
+    return { title: parsed.title, description: parsed.description } satisfies Caption;
+  } catch {
     return null;
   }
-  if (!data?.title || !data.description) return null;
-  return { title: data.title, description: data.description } satisfies Caption;
 }
 
-async function saveCaption(db: SupabaseClient | null, id: string, image: string, caption: Caption) {
+async function saveCaption(
+  db: SupabaseClient | null,
+  bucket: string,
+  id: string,
+  image: string,
+  caption: Caption,
+) {
   if (!db) return false;
-  const row = {
+  const body = JSON.stringify({
     id,
     image,
     title: caption.title,
     description: caption.description,
-    prompt_version: CAPTION_VERSION,
-  };
-  let { error } = await db.from("photo_captions").upsert(row);
-  if (error && error.message.includes("prompt_version")) {
-    ({ error } = await db.from("photo_captions").upsert({
-      id,
-      image,
-      title: caption.title,
-      description: caption.description,
-    }));
-  }
+  });
+  const { error } = await db.storage.from(bucket).upload(captionObjectPath(id), body, {
+    contentType: "application/json",
+    upsert: true,
+  });
   if (error) {
     console.error("[describe] save caption", error.message);
     return false;
