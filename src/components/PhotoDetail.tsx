@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 import type { GalleryItem } from "../data/gallery";
 import {
   fetchStoredCaption,
   getCachedCaption,
   setCachedCaption,
 } from "../lib/captionStore";
-import { LeafMark } from "./LeafMark";
 
 type PhotoDetailProps = {
   item: GalleryItem;
@@ -97,6 +96,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
 
   const title = shown?.title ?? "";
   const description = shown?.description ?? "";
+  const swipe = useSwipeNav(onPrev, onNext);
 
   return (
     <div
@@ -109,7 +109,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
           event.stopPropagation();
           onPrev();
         }}
-        className="absolute left-2 top-[28%] z-20 grid h-11 w-11 place-items-center rounded-full bg-paper/95 text-xl text-ink shadow-lg ring-1 ring-[#f0e0c4] sm:left-3 sm:top-1/2 sm:h-12 sm:w-12 sm:-translate-y-1/2"
+        className="absolute left-2 top-[28%] z-20 grid h-12 w-12 place-items-center rounded-full bg-paper text-2xl text-ink shadow-lg ring-2 ring-white sm:left-3 sm:top-1/2 sm:h-12 sm:w-12 sm:-translate-y-1/2"
         aria-label="Ảnh trước"
       >
         ←
@@ -120,7 +120,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
           event.stopPropagation();
           onNext();
         }}
-        className="absolute right-2 top-[28%] z-20 grid h-11 w-11 place-items-center rounded-full bg-paper/95 text-xl text-ink shadow-lg ring-1 ring-[#f0e0c4] sm:right-3 sm:top-1/2 sm:h-12 sm:w-12 sm:-translate-y-1/2"
+        className="absolute right-2 top-[28%] z-20 grid h-12 w-12 place-items-center rounded-full bg-paper text-2xl text-ink shadow-lg ring-2 ring-white sm:right-3 sm:top-1/2 sm:h-12 sm:w-12 sm:-translate-y-1/2"
         aria-label="Ảnh sau"
       >
         →
@@ -129,14 +129,24 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
       <article
         className="keepsake-card relative grid h-[100dvh] w-full max-w-[1080px] grid-rows-[auto_1fr] overflow-hidden rounded-none sm:h-auto sm:max-h-[92vh] sm:grid-rows-none sm:rounded-[30px] md:grid-cols-[1.15fr_0.95fr]"
         onClick={(event) => event.stopPropagation()}
+        onTouchStart={swipe.onTouchStart}
+        onTouchEnd={swipe.onTouchEnd}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 grid h-11 w-11 place-items-center rounded-full bg-white/90 text-lg font-semibold text-ink shadow-md ring-1 ring-[#f0e0c4] sm:right-4 sm:top-4 sm:h-10 sm:w-10"
+          className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-30 grid h-12 w-12 place-items-center rounded-full bg-paper shadow-[0_8px_22px_rgba(58,42,34,0.2)] ring-2 ring-[#f0b429]/80 sm:right-4 sm:top-4"
           aria-label="Đóng"
         >
-          ×
+          <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="#e85d4c"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
 
         <div className="photo-mat relative min-h-[220px] p-4 sm:p-7 md:min-h-[560px]">
@@ -153,13 +163,9 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
 
         <div className="caption-wash relative flex min-h-0 flex-1 flex-col overflow-y-auto p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-8 md:max-h-[92vh] md:min-h-[560px]">
           <CornerFlourish className="pointer-events-none absolute right-4 top-4 h-12 w-12 text-gold/70 sm:right-5 sm:top-5 sm:h-16 sm:w-16" />
-          <div className="flex items-center gap-3">
-            <LeafMark className="h-8 w-8 sm:h-9 sm:w-9" />
-            <p className="font-hand text-[20px] leading-none text-script sm:text-[24px]">Thủ công nhà mình</p>
-          </div>
 
           {loading ? (
-            <div className="mt-6 space-y-4">
+            <div className="mt-1 space-y-4 pr-14">
               <div className="h-9 w-4/5 animate-pulse rounded-lg bg-sand" />
               <div className="h-4 w-24 animate-pulse rounded bg-sand-deep/80" />
               <div className="mt-8 space-y-2">
@@ -173,7 +179,7 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
             </div>
           ) : (
             <>
-              <h2 className="font-display mt-4 text-[26px] leading-tight text-ink sm:mt-5 sm:text-[38px]">
+              <h2 className="font-display pr-14 text-[26px] leading-tight text-ink sm:text-[38px]">
                 {title}
               </h2>
               {item.year ? (
@@ -191,6 +197,27 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
       </article>
     </div>
   );
+}
+
+function useSwipeNav(onPrev: () => void, onNext: () => void) {
+  const start = useRef<{ x: number; y: number } | null>(null);
+
+  return {
+    onTouchStart(event: TouchEvent) {
+      const touch = event.changedTouches[0];
+      start.current = { x: touch.clientX, y: touch.clientY };
+    },
+    onTouchEnd(event: TouchEvent) {
+      if (!start.current) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - start.current.x;
+      const dy = touch.clientY - start.current.y;
+      start.current = null;
+      if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+      if (dx < 0) onNext();
+      else onPrev();
+    },
+  };
 }
 
 function CornerFlourish({ className }: { className?: string }) {
