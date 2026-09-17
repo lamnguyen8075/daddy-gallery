@@ -114,8 +114,20 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
       .sort((a, b) => b.count - a.count);
   }, [items, rows]);
 
+  const byLocation = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const label = row.location || "Chưa rõ nơi";
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [rows]);
+
   const maxDay = Math.max(1, ...byDay.map((entry) => entry.count));
   const maxLabel = Math.max(1, ...byLabel.map((entry) => entry.count));
+  const maxLocation = Math.max(1, ...byLocation.map((entry) => entry.count));
   const todayCount = byDay.find((entry) => entry.day === todayKey())?.count ?? 0;
   const photoCount = rows.filter((row) => row.kind === "photo").length;
 
@@ -179,6 +191,30 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
         </div>
 
         <div className="mt-8 rounded-3xl bg-paper px-4 py-5 shadow-[0_0_0_1px_rgba(240,224,196,0.95)] sm:px-6">
+          <p className="text-sm text-ink-soft">Theo vị trí</p>
+          {byLocation.length === 0 ? (
+            <p className="mt-4 text-ink-soft">Chưa có vị trí nào ghi nhận.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {byLocation.map((entry) => (
+                <li key={entry.label}>
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="truncate text-ink">{entry.label}</span>
+                    <span className="shrink-0 text-ink-soft">{entry.count}</span>
+                  </div>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
+                    <div
+                      className="h-full rounded-full bg-sky"
+                      style={{ width: `${(entry.count / maxLocation) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="mt-8 rounded-3xl bg-paper px-4 py-5 shadow-[0_0_0_1px_rgba(240,224,196,0.95)] sm:px-6">
           <p className="text-sm text-ink-soft">Theo chỗ bấm</p>
           {byLabel.length === 0 ? (
             <p className="mt-4 text-ink-soft">
@@ -214,7 +250,14 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
             <ul className="mt-4 divide-y divide-[#f0e0c4]">
               {rows.map((row) => (
                 <li key={row.id} className="flex items-start justify-between gap-4 py-3">
-                  <span className="min-w-0 text-ink">{clickLabel(row, items)}</span>
+                  <span className="min-w-0">
+                    <span className="block text-ink">{clickLabel(row, items)}</span>
+                    {row.location || row.ip ? (
+                      <span className="mt-0.5 block text-sm text-ink-soft">
+                        {[row.location, row.ip].filter(Boolean).join(" · ")}
+                      </span>
+                    ) : null}
+                  </span>
                   <time className="shrink-0 text-sm text-ink-soft" dateTime={row.created_at}>
                     {formatTime(row.created_at)}
                   </time>

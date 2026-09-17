@@ -5,8 +5,29 @@ create table if not exists public.nhatky (
   id uuid primary key default gen_random_uuid(),
   kind text not null,
   target text,
+  ip text,
+  location text,
   created_at timestamptz not null default now()
 );
+
+alter table public.nhatky add column if not exists ip text;
+alter table public.nhatky add column if not exists location text;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'nhatky'
+      and column_name = 'province'
+  ) then
+    update public.nhatky
+    set location = province
+    where location is null
+      and province is not null;
+  end if;
+end $$;
 
 alter table public.nhatky enable row level security;
 
