@@ -97,9 +97,10 @@ async function readStoredCaption(id) {
 }
 
 async function saveCaption(id, image, caption) {
-  const body = JSON.stringify({ id, image, title: caption.title, description: caption.description });
+  const body = JSON.stringify({ id, image, title: caption.title, description: caption.description, v: "show" });
   const { error } = await db.storage.from(bucket).upload(captionPath(id), body, {
     contentType: "application/json",
+    cacheControl: "0",
     upsert: true,
   });
   if (error) throw error;

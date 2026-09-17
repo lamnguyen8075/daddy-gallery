@@ -179,9 +179,11 @@ async function saveCaption(
     image,
     title: caption.title,
     description: caption.description,
+    v: "show",
   });
   const { error } = await db.storage.from(bucket).upload(captionObjectPath(id), body, {
     contentType: "application/json",
+    cacheControl: "0",
     upsert: true,
   });
   if (error) {

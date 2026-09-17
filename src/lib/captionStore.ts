@@ -1,4 +1,4 @@
-import { captionObjectPath, captionsFolder } from "./captions";
+import { captionFetchVersion, captionObjectPath, captionsFolder } from "./captions";
 import { galleryBucket, supabase } from "./supabase";
 
 export type PhotoCaption = {
@@ -28,25 +28,28 @@ function parseCaption(raw: string): PhotoCaption | null {
   }
 }
 
+async function readCaptionFile(path: string): Promise<PhotoCaption | null> {
+  if (!supabase) return null;
+  const { data: file } = supabase.storage.from(galleryBucket).getPublicUrl(path);
+  const response = await fetch(`${file.publicUrl}?v=${captionFetchVersion}`, { cache: "no-store" });
+  if (!response.ok) return null;
+  return parseCaption(await response.text());
+}
+
 export async function fetchStoredCaption(id: string): Promise<PhotoCaption | null> {
   const cached = memory.get(id);
   if (cached) return cached;
-  if (!supabase) return null;
 
-  const { data, error } = await supabase.storage.from(galleryBucket).download(captionObjectPath(id));
-  if (error || !data) return null;
-
-  const caption = parseCaption(await data.text());
+  const caption = await readCaptionFile(captionObjectPath(id));
   if (!caption) return null;
   memory.set(id, caption);
   return caption;
 }
 
 export async function prefetchStoredCaptions() {
-  const db = supabase;
-  if (!db) return;
+  if (!supabase) return;
 
-  const { data: files, error } = await db.storage.from(galleryBucket).list(captionsFolder, {
+  const { data: files, error } = await supabase.storage.from(galleryBucket).list(captionsFolder, {
     limit: 1000,
   });
   if (error || !files) return;
@@ -56,9 +59,7 @@ export async function prefetchStoredCaptions() {
       if (!file.name.endsWith(".json") || file.name.startsWith("_")) return;
       const id = file.name.replace(/\.json$/i, "");
       if (memory.has(id)) return;
-      const { data } = await db.storage.from(galleryBucket).download(`${captionsFolder}/${file.name}`);
-      if (!data) return;
-      const caption = parseCaption(await data.text());
+      const caption = await readCaptionFile(`${captionsFolder}/${file.name}`);
       if (caption) memory.set(id, caption);
     }),
   );
