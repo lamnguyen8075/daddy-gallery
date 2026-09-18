@@ -27,11 +27,7 @@ export function GalleryGrid({
             <p className="text-[12px] tracking-[0.22em] text-ink-soft">PHÒNG TRANH</p>
             <h2 className="font-display mt-2 text-3xl text-ink sm:text-4xl">{heading}</h2>
           </div>
-        ) : (
-          <p className="mb-5 font-serif text-base italic text-ink-soft sm:mb-7 sm:text-lg">
-            Những món gần nhà
-          </p>
-        )}
+        ) : null}
 
         {error ? (
           <p className="py-16 text-center font-serif text-xl italic text-ink-soft">
