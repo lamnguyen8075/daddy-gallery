@@ -3,7 +3,7 @@ import { CameraMark } from "./CameraMark";
 import type { GalleryItem } from "../data/gallery";
 import { setCachedCaption, type PhotoCaption } from "../lib/captionStore";
 import { generateCaption } from "../lib/describe";
-import { maxUploadBytes, prepareUploadFile, uploadGalleryImage, validateUploadFile } from "../lib/upload";
+import { prepareUploadFile, uploadGalleryImage, validateUploadFile } from "../lib/upload";
 
 type UploadPageProps = {
   onClose: () => void;
@@ -39,17 +39,15 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
       return;
     }
 
-    let ready = next;
-    if (next.size > maxUploadBytes) {
-      setStage("compressing");
-      setError(null);
-      try {
-        ready = await prepareUploadFile(next);
-      } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Không thu nhỏ được ảnh.");
-        setStage("error");
-        return;
-      }
+    setStage("compressing");
+    setError(null);
+    let ready: File;
+    try {
+      ready = await prepareUploadFile(next);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Không thu nhỏ được ảnh.");
+      setStage("error");
+      return;
     }
 
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
@@ -158,7 +156,7 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
         ) : null}
 
         {stage === "compressing" ? (
-          <p className="mt-6 text-ink-soft">Ảnh lớn quá, đang thu nhỏ cho vừa gửi...</p>
+          <p className="mt-6 text-ink-soft">Đang thu nhỏ ảnh cho vừa gửi...</p>
         ) : null}
         {stage === "uploading" ? (
           <p className="mt-6 text-ink-soft">Đang đưa ảnh lên phòng tranh...</p>

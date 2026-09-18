@@ -4,7 +4,8 @@ import { captionObjectPath } from "./captions";
 import { galleryBucket, isSupabaseConfigured, supabase } from "./supabase";
 
 export const uploadsFolder = "uploads";
-export const maxUploadBytes = 8 * 1024 * 1024;
+export const maxUploadBytes = 2 * 1024 * 1024;
+
 const allowedTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -18,18 +19,6 @@ export function validateUploadFile(file: File) {
   if (!allowedTypes.has(file.type) && !isImageFile(file.name)) {
     throw new Error("Dùng ảnh chụp từ điện thoại, JPG hoặc PNG.");
   }
-}
-
-function fileExtension(file: File) {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && /^(jpe?g|png|webp|gif|heic|heif)$/.test(fromName)) {
-    return fromName === "jpeg" ? "jpg" : fromName;
-  }
-  if (file.type === "image/png") return "png";
-  if (file.type === "image/webp") return "webp";
-  if (file.type === "image/gif") return "gif";
-  if (file.type === "image/heic" || file.type === "image/heif") return "heic";
-  return "jpg";
 }
 
 function jpgName(name: string) {
@@ -52,11 +41,10 @@ function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
 
 export async function prepareUploadFile(file: File): Promise<File> {
   validateUploadFile(file);
-  if (file.size <= maxUploadBytes) return file;
 
   const bitmap = await readBitmap(file);
-  const edges = [2048, 1600, 1280, 1024, 800];
-  const qualities = [0.84, 0.74, 0.64, 0.54, 0.42];
+  const edges = [2048, 1600, 1280, 1024, 800, 640, 480, 320];
+  const qualities = [0.86, 0.74, 0.62, 0.5, 0.38, 0.26];
 
   try {
     for (const edge of edges) {
@@ -88,21 +76,22 @@ export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
   if (!supabase || !isSupabaseConfigured) {
     throw new Error("Chưa kết nối được phòng tranh.");
   }
-  validateUploadFile(file);
-  const ready = file.size <= maxUploadBytes ? file : await prepareUploadFile(file);
+  const ready = file.type === "image/jpeg" && file.size <= maxUploadBytes ? file : await prepareUploadFile(file);
 
-  const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExtension(ready)}`;
+  const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.jpg`;
   const path = `${uploadsFolder}/${name}`;
   const { error } = await supabase.storage.from(galleryBucket).upload(path, ready, {
     cacheControl: "3600",
-    contentType: ready.type || "image/jpeg",
+    contentType: "image/jpeg",
     upsert: false,
   });
   if (error) {
     throw new Error(
       /row-level security|policy|not allowed/i.test(error.message)
         ? "Chưa mở quyền gửi ảnh. Trong SQL editor, chạy file supabase/uploads.sql."
-        : error.message,
+        : /exceeded the maximum allowed size|payload too large|too large/i.test(error.message)
+          ? "Ảnh vẫn lớn hơn giới hạn kho. Thử chọn ảnh khác."
+          : error.message,
     );
   }
 
