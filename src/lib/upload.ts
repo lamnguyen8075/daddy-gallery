@@ -5,7 +5,7 @@ import { captionObjectPath } from "./captions";
 import { galleryBucket, isSupabaseConfigured, supabase } from "./supabase";
 
 export const uploadsFolder = "uploads";
-const maxBytes = 8 * 1024 * 1024;
+export const maxUploadBytes = 8 * 1024 * 1024;
 const allowedTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -18,9 +18,6 @@ const allowedTypes = new Set([
 export function validateUploadFile(file: File) {
   if (!allowedTypes.has(file.type) && !isImageFile(file.name)) {
     throw new Error("Dùng ảnh chụp từ điện thoại, JPG hoặc PNG.");
-  }
-  if (file.size > maxBytes) {
-    throw new Error("Ảnh này lớn quá. Chọn ảnh dưới 8MB.");
   }
 }
 
@@ -36,17 +33,70 @@ function fileExtension(file: File) {
   return "jpg";
 }
 
+function jpgName(name: string) {
+  return name.replace(/\.[^.]+$/, "") + ".jpg";
+}
+
+async function readBitmap(file: File) {
+  try {
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    return createImageBitmap(file);
+  }
+}
+
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/jpeg", quality);
+  });
+}
+
+export async function prepareUploadFile(file: File): Promise<File> {
+  validateUploadFile(file);
+  if (file.size <= maxUploadBytes) return file;
+
+  const bitmap = await readBitmap(file);
+  const edges = [2048, 1600, 1280, 1024, 800];
+  const qualities = [0.84, 0.74, 0.64, 0.54, 0.42];
+
+  try {
+    for (const edge of edges) {
+      const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Không thu nhỏ được ảnh.");
+      context.drawImage(bitmap, 0, 0, width, height);
+
+      for (const quality of qualities) {
+        const blob = await canvasToJpeg(canvas, quality);
+        if (blob && blob.size <= maxUploadBytes) {
+          return new File([blob], jpgName(file.name), { type: "image/jpeg", lastModified: Date.now() });
+        }
+      }
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error("Ảnh vẫn lớn quá sau khi thu nhỏ. Thử chụp gần hơn một chút.");
+}
+
 export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
   if (!supabase || !isSupabaseConfigured) {
     throw new Error("Chưa kết nối được phòng tranh.");
   }
   validateUploadFile(file);
+  const ready = file.size <= maxUploadBytes ? file : await prepareUploadFile(file);
 
-  const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExtension(file)}`;
+  const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExtension(ready)}`;
   const path = `${uploadsFolder}/${name}`;
-  const { error } = await supabase.storage.from(galleryBucket).upload(path, file, {
+  const { error } = await supabase.storage.from(galleryBucket).upload(path, ready, {
     cacheControl: "3600",
-    contentType: file.type || "image/jpeg",
+    contentType: ready.type || "image/jpeg",
     upsert: false,
   });
   if (error) {

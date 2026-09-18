@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import { CameraMark } from "./CameraMark";
 import type { GalleryItem } from "../data/gallery";
 import { setCachedCaption, type PhotoCaption } from "../lib/captionStore";
-import { generateCaption, uploadGalleryImage, validateUploadFile } from "../lib/upload";
+import { generateCaption, maxUploadBytes, prepareUploadFile, uploadGalleryImage, validateUploadFile } from "../lib/upload";
 
 type UploadPageProps = {
   onClose: () => void;
   onSeePhoto: (item: GalleryItem) => void;
 };
 
-type Stage = "pick" | "uploading" | "describing" | "done" | "error";
+type Stage = "pick" | "compressing" | "uploading" | "describing" | "done" | "error";
 
 export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,7 +28,7 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
     };
   }, []);
 
-  function chooseFile(next: File | undefined) {
+  async function chooseFile(next: File | undefined) {
     if (!next) return;
     try {
       validateUploadFile(next);
@@ -37,10 +37,24 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
       setStage("error");
       return;
     }
+
+    let ready = next;
+    if (next.size > maxUploadBytes) {
+      setStage("compressing");
+      setError(null);
+      try {
+        ready = await prepareUploadFile(next);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Không thu nhỏ được ảnh.");
+        setStage("error");
+        return;
+      }
+    }
+
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
-    const url = URL.createObjectURL(next);
+    const url = URL.createObjectURL(ready);
     previewUrl.current = url;
-    setFile(next);
+    setFile(ready);
     setPreview(url);
     setError(null);
     setStage("pick");
@@ -74,7 +88,7 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
     }
   }
 
-  const busy = stage === "uploading" || stage === "describing";
+  const busy = stage === "compressing" || stage === "uploading" || stage === "describing";
 
   return (
     <section className="fixed inset-0 z-[60] overflow-y-auto bg-cream pt-[env(safe-area-inset-top)]">
@@ -142,6 +156,9 @@ export function UploadPage({ onClose, onSeePhoto }: UploadPageProps) {
           </p>
         ) : null}
 
+        {stage === "compressing" ? (
+          <p className="mt-6 text-ink-soft">Ảnh lớn quá, đang thu nhỏ cho vừa gửi...</p>
+        ) : null}
         {stage === "uploading" ? (
           <p className="mt-6 text-ink-soft">Đang đưa ảnh lên phòng tranh...</p>
         ) : null}
