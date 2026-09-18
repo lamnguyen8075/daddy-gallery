@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { GalleryItem } from "../data/gallery";
 import { fetchClicks, type ClickRow } from "../lib/clicks";
 
@@ -195,22 +195,24 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
           {byLocation.length === 0 ? (
             <p className="mt-4 text-ink-soft">Chưa có vị trí nào ghi nhận.</p>
           ) : (
-            <ul className="mt-4 space-y-3">
-              {byLocation.map((entry) => (
-                <li key={entry.label}>
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="truncate text-ink">{entry.label}</span>
-                    <span className="shrink-0 text-ink-soft">{entry.count}</span>
-                  </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
-                    <div
-                      className="h-full rounded-full bg-sky"
-                      style={{ width: `${(entry.count / maxLocation) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ScrollList>
+              <ul className="space-y-3">
+                {byLocation.map((entry) => (
+                  <li key={entry.label}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="truncate text-ink">{entry.label}</span>
+                      <span className="shrink-0 text-ink-soft">{entry.count}</span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
+                      <div
+                        className="h-full rounded-full bg-sky"
+                        style={{ width: `${(entry.count / maxLocation) * 100}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </ScrollList>
           )}
         </div>
 
@@ -221,22 +223,24 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
               Chưa có lượt bấm. Vào trang chủ, bấm vài chỗ, rồi bấm Làm mới.
             </p>
           ) : (
-            <ul className="mt-4 space-y-3">
-              {byLabel.map((entry) => (
-                <li key={entry.label}>
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="truncate text-ink">{entry.label}</span>
-                    <span className="shrink-0 text-ink-soft">{entry.count}</span>
-                  </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
-                    <div
-                      className={`h-full rounded-full ${kindColors[entry.kind] ?? "bg-sky"}`}
-                      style={{ width: `${(entry.count / maxLabel) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ScrollList>
+              <ul className="space-y-3">
+                {byLabel.map((entry) => (
+                  <li key={entry.label}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="truncate text-ink">{entry.label}</span>
+                      <span className="shrink-0 text-ink-soft">{entry.count}</span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
+                      <div
+                        className={`h-full rounded-full ${kindColors[entry.kind] ?? "bg-sky"}`}
+                        style={{ width: `${(entry.count / maxLabel) * 100}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </ScrollList>
           )}
         </div>
 
@@ -247,23 +251,25 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
           ) : rows.length === 0 ? (
             <p className="mt-4 text-ink-soft">Chưa có dòng nào.</p>
           ) : (
-            <ul className="mt-4 divide-y divide-[#f0e0c4]">
-              {rows.map((row) => (
-                <li key={row.id} className="flex items-start justify-between gap-4 py-3">
-                  <span className="min-w-0">
-                    <span className="block text-ink">{clickLabel(row, items)}</span>
-                    {row.location || row.ip ? (
-                      <span className="mt-0.5 block text-sm text-ink-soft">
-                        {[row.location, row.ip].filter(Boolean).join(" · ")}
-                      </span>
-                    ) : null}
-                  </span>
-                  <time className="shrink-0 text-sm text-ink-soft" dateTime={row.created_at}>
-                    {formatTime(row.created_at)}
-                  </time>
-                </li>
-              ))}
-            </ul>
+            <ScrollList tall>
+              <ul className="divide-y divide-[#f0e0c4]">
+                {rows.map((row) => (
+                  <li key={row.id} className="flex items-start justify-between gap-4 py-3">
+                    <span className="min-w-0">
+                      <span className="block text-ink">{clickLabel(row, items)}</span>
+                      {row.location || row.ip ? (
+                        <span className="mt-0.5 block text-sm text-ink-soft">
+                          {[row.location, row.ip].filter(Boolean).join(" · ")}
+                        </span>
+                      ) : null}
+                    </span>
+                    <time className="shrink-0 text-sm text-ink-soft" dateTime={row.created_at}>
+                      {formatTime(row.created_at)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            </ScrollList>
           )}
         </div>
       </div>
@@ -276,6 +282,18 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-paper px-3 py-4 text-center shadow-[0_0_0_1px_rgba(240,224,196,0.95)]">
       <p className="font-display text-2xl text-ink sm:text-3xl">{value}</p>
       <p className="mt-1 text-[12px] text-ink-soft">{label}</p>
+    </div>
+  );
+}
+
+function ScrollList({ children, tall = false }: { children: ReactNode; tall?: boolean }) {
+  return (
+    <div
+      className={`mt-4 overflow-y-auto overscroll-contain pr-1 ${
+        tall ? "max-h-[min(22rem,50vh)]" : "max-h-52"
+      }`}
+    >
+      {children}
     </div>
   );
 }

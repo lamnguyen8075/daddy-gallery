@@ -23,9 +23,10 @@ export function useGalleryItems() {
 
   useEffect(() => {
     let cancelled = false;
+    const silent = nonce > 0;
 
     async function load() {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       try {
         const next = await fetchGalleryItems();
@@ -34,7 +35,7 @@ export function useGalleryItems() {
           void prefetchStoredCaptions();
         }
       } catch (caught) {
-        if (!cancelled) {
+        if (!cancelled && !silent) {
           setItems([]);
           setError(caught instanceof Error ? caught.message : "Could not load the gallery.");
         }
@@ -48,6 +49,14 @@ export function useGalleryItems() {
       cancelled = true;
     };
   }, [nonce]);
+
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) reload();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [reload]);
 
   return { items, loading, error, reload, addItem, removeItem };
 }

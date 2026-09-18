@@ -4,7 +4,15 @@ import {
   type GalleryItem,
   type PhotoCategory,
 } from "../data/gallery";
-import { galleryBucket, isSupabaseConfigured, supabase } from "./supabase";
+import { galleryBucket, isSupabaseConfigured, supabase, versionedUrl } from "./supabase";
+
+type StorageFile = {
+  id: string | null;
+  name: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  metadata: unknown;
+};
 
 export async function fetchGalleryItems(): Promise<GalleryItem[]> {
   if (!supabase || !isSupabaseConfigured) {
@@ -22,7 +30,7 @@ export async function fetchGalleryItems(): Promise<GalleryItem[]> {
       await addImagesFromFolder(entry.name, categoryFromFolder(entry.name), items);
       continue;
     }
-    addImage(entry.name, "", "Crafts", entry.id, items, entry.created_at);
+    addImage(entry, "", "Crafts", items);
   }
 
   return items;
@@ -36,7 +44,7 @@ async function addImagesFromFolder(
   const files = await listFolder(prefix);
   for (const file of files) {
     if (isFolder(file)) continue;
-    addImage(file.name, prefix, category, file.id, items, file.created_at);
+    addImage(file, prefix, category, items);
   }
 }
 
@@ -59,24 +67,18 @@ async function listFolder(prefix: string) {
   return data ?? [];
 }
 
-function addImage(
-  name: string,
-  prefix: string,
-  category: PhotoCategory,
-  id: string | null,
-  items: GalleryItem[],
-  createdAt?: string | null,
-) {
-  if (!supabase || !isImageFile(name)) return;
-  const storagePath = prefix ? `${prefix}/${name}` : name;
+function addImage(file: StorageFile, prefix: string, category: PhotoCategory, items: GalleryItem[]) {
+  if (!supabase || !isImageFile(file.name)) return;
+  const storagePath = prefix ? `${prefix}/${file.name}` : file.name;
   const { data } = supabase.storage.from(galleryBucket).getPublicUrl(storagePath);
-  const year = createdAt ? String(new Date(createdAt).getFullYear()) : "";
+  const version = file.updated_at ?? file.created_at ?? file.id ?? file.name;
+  const year = file.created_at ? String(new Date(file.created_at).getFullYear()) : "";
   items.push({
-    id: id ?? storagePath,
+    id: file.id ?? storagePath,
     path: storagePath,
     title: year ? `Photo · ${year}` : "Photo",
     category,
-    image: data.publicUrl,
+    image: versionedUrl(data.publicUrl, version),
     maker: "",
     year,
     memory: "",

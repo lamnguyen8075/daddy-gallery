@@ -1,7 +1,7 @@
 import type { GalleryItem } from "../data/gallery";
 import { isImageFile } from "../data/gallery";
 import { captionObjectPath } from "./captions";
-import { galleryBucket, isSupabaseConfigured, supabase } from "./supabase";
+import { galleryBucket, isSupabaseConfigured, supabase, versionedUrl } from "./supabase";
 
 export const uploadsFolder = "uploads";
 export const maxUploadBytes = 2 * 1024 * 1024;
@@ -81,7 +81,7 @@ export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
   const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.jpg`;
   const path = `${uploadsFolder}/${name}`;
   const { error } = await supabase.storage.from(galleryBucket).upload(path, ready, {
-    cacheControl: "3600",
+    cacheControl: "0",
     contentType: "image/jpeg",
     upsert: false,
   });
@@ -110,7 +110,7 @@ export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
     path,
     title: "Ảnh mới gửi",
     category: "Crafts",
-    image: data.publicUrl,
+    image: versionedUrl(data.publicUrl, stored?.updated_at ?? String(Date.now())),
     maker: "",
     year,
     memory: "",

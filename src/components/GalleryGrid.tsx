@@ -21,7 +21,7 @@ export function GalleryGrid({
 
   return (
     <section id="gallery" className="bg-cream">
-      <div className="mx-auto max-w-[1240px] px-4 pb-28 pt-6 sm:px-5 sm:pb-16 sm:pt-8 lg:px-8">
+      <div className="mx-auto max-w-[1240px] px-4 pb-28 pt-4 sm:px-5 sm:pb-16 sm:pt-8 lg:px-8">
         {heading ? (
           <div className="mb-6 sm:mb-8">
             <p className="text-[12px] tracking-[0.22em] text-ink-soft">PHÒNG TRANH</p>

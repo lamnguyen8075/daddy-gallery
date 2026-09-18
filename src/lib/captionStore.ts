@@ -1,5 +1,5 @@
-import { captionFetchVersion, captionObjectPath, captionsFolder } from "./captions";
-import { galleryBucket, supabase } from "./supabase";
+import { captionObjectPath, captionsFolder } from "./captions";
+import { galleryBucket, supabase, versionedUrl } from "./supabase";
 
 export type PhotoCaption = {
   title: string;
@@ -35,7 +35,7 @@ function parseCaption(raw: string): PhotoCaption | null {
 async function readCaptionFile(path: string): Promise<PhotoCaption | null> {
   if (!supabase) return null;
   const { data: file } = supabase.storage.from(galleryBucket).getPublicUrl(path);
-  const response = await fetch(`${file.publicUrl}?v=${captionFetchVersion}`, { cache: "no-store" });
+  const response = await fetch(versionedUrl(file.publicUrl, String(Date.now())), { cache: "no-store" });
   if (!response.ok) return null;
   return parseCaption(await response.text());
 }
@@ -62,7 +62,6 @@ export async function prefetchStoredCaptions() {
     files.map(async (file) => {
       if (!file.name.endsWith(".json") || file.name.startsWith("_")) return;
       const id = file.name.replace(/\.json$/i, "");
-      if (memory.has(id)) return;
       const caption = await readCaptionFile(`${captionsFolder}/${file.name}`);
       if (caption) memory.set(id, caption);
     }),

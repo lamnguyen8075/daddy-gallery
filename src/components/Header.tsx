@@ -1,3 +1,4 @@
+import { appBuild, versionedUrl } from "../lib/supabase";
 import { PersonMark } from "./PersonMark";
 
 export type PageId = "home" | "gallery" | "about";
@@ -27,7 +28,7 @@ export function Header({ page, admin = false, onNavigate, onAdmin }: HeaderProps
             className="flex min-w-0 items-center gap-2 text-left"
           >
             <img
-              src={`${import.meta.env.BASE_URL}craven-pack-sketch.png`}
+              src={versionedUrl(`${import.meta.env.BASE_URL}craven-pack-sketch.png`, appBuild)}
               alt=""
               className="h-11 w-auto shrink-0 sm:h-[3.25rem]"
             />

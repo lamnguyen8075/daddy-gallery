@@ -17,7 +17,7 @@ import { clearCachedCaption } from "./lib/captionStore";
 import { deleteGalleryImage } from "./lib/upload";
 
 export default function App() {
-  const { items, loading, error, addItem, removeItem } = useGalleryItems();
+  const { items, loading, error, addItem, removeItem, reload } = useGalleryItems();
   const [page, setPage] = useState<AppPage>("home");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [admin, setAdmin] = useState(isAdminSession);
@@ -119,6 +119,7 @@ export default function App() {
     removeItem(item.id);
     setSelectedId(null);
     setPhotoInUrl(null);
+    reload();
   }
 
   function selectItem(item: GalleryItem) {
