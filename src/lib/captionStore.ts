@@ -16,6 +16,10 @@ export function setCachedCaption(id: string, caption: PhotoCaption) {
   memory.set(id, caption);
 }
 
+export function clearCachedCaption(id: string) {
+  memory.delete(id);
+}
+
 function parseCaption(raw: string): PhotoCaption | null {
   try {
     const parsed = JSON.parse(raw) as { title?: string; description?: string };

@@ -13,6 +13,7 @@ import { UploadPage } from "./components/UploadPage";
 import { useGalleryItems } from "./hooks/useGalleryItems";
 import { isAdminSession, setAdminSession } from "./lib/admin";
 import { logClick } from "./lib/clicks";
+import { clearCachedCaption } from "./lib/captionStore";
 import { deleteGalleryImage } from "./lib/upload";
 
 export default function App() {
@@ -114,6 +115,7 @@ export default function App() {
 
   async function deleteItem(item: GalleryItem) {
     await deleteGalleryImage(item);
+    clearCachedCaption(item.id);
     removeItem(item.id);
     setSelectedId(null);
     setPhotoInUrl(null);

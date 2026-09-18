@@ -123,13 +123,18 @@ export async function deleteGalleryImage(item: GalleryItem) {
     throw new Error("Chưa kết nối được phòng tranh.");
   }
 
-  const paths = [item.path, captionObjectPath(item.id)].filter(Boolean);
-  const { error } = await supabase.storage.from(galleryBucket).remove(paths);
+  const paths = [...new Set([item.path, captionObjectPath(item.id), captionObjectPath(item.path)])];
+  const { data, error } = await supabase.storage.from(galleryBucket).remove(paths);
   if (error) {
     throw new Error(
-      /row-level security|policy|not allowed/i.test(error.message)
-        ? "Chưa mở quyền xóa ảnh. Trong SQL editor, chạy thêm phần xóa ở supabase/uploads.sql."
+      /row-level security|policy|not allowed|access denied/i.test(error.message)
+        ? "Chưa mở quyền xóa ảnh. Trong SQL editor, chạy file supabase/uploads.sql."
         : error.message,
     );
+  }
+
+  const removed = new Set((data ?? []).map((file) => file.name));
+  if (!removed.has(item.path)) {
+    throw new Error("Chưa mở quyền xóa ảnh. Trong SQL editor, chạy file supabase/uploads.sql.");
   }
 }
