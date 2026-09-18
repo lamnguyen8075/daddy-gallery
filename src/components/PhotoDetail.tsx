@@ -5,6 +5,7 @@ import {
   getCachedCaption,
   setCachedCaption,
 } from "../lib/captionStore";
+import { generateCaption } from "../lib/describe";
 
 type PhotoDetailProps = {
   item: GalleryItem;
@@ -73,18 +74,8 @@ export function PhotoDetail({ item, admin = false, onClose, onPrev, onNext, onDe
           return;
         }
 
-        const response = await fetch("/api/describe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: item.id, image: item.image }),
-        });
-        if (!response.ok) throw new Error("describe failed");
-        const data = (await response.json()) as Partial<Caption>;
-        const next = {
-          title: data.title?.trim() ?? "",
-          description: data.description?.trim() ?? "",
-        };
-        if (!next.title || !next.description || cancelled) return;
+        const next = await generateCaption(item.id, item.image);
+        if (!next || cancelled) return;
         setCachedCaption(item.id, next);
         setCaption(next);
         setCaptionId(item.id);

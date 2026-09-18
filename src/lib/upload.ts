@@ -1,6 +1,5 @@
 import type { GalleryItem } from "../data/gallery";
 import { isImageFile } from "../data/gallery";
-import type { PhotoCaption } from "./captionStore";
 import { captionObjectPath } from "./captions";
 import { galleryBucket, isSupabaseConfigured, supabase } from "./supabase";
 
@@ -128,24 +127,6 @@ export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
     memory: "",
     aspect: "portrait",
   };
-}
-
-export async function generateCaption(id: string, image: string): Promise<PhotoCaption | null> {
-  try {
-    const response = await fetch("/api/describe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, image }),
-    });
-    if (!response.ok) return null;
-    const data = (await response.json()) as Partial<PhotoCaption>;
-    const title = data.title?.trim() ?? "";
-    const description = data.description?.trim() ?? "";
-    if (!title || !description) return null;
-    return { title, description };
-  } catch {
-    return null;
-  }
 }
 
 export async function deleteGalleryImage(item: GalleryItem) {

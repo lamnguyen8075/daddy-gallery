@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import { CameraMark } from "./CameraMark";
 import type { GalleryItem } from "../data/gallery";
 import { setCachedCaption, type PhotoCaption } from "../lib/captionStore";
-import { generateCaption, maxUploadBytes, prepareUploadFile, uploadGalleryImage, validateUploadFile } from "../lib/upload";
+import { generateCaption } from "../lib/describe";
+import { maxUploadBytes, prepareUploadFile, uploadGalleryImage, validateUploadFile } from "../lib/upload";
 
 type UploadPageProps = {
   onClose: () => void;
