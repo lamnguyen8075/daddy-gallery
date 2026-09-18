@@ -8,9 +8,11 @@ import {
 
 type PhotoDetailProps = {
   item: GalleryItem;
+  admin?: boolean;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onDelete?: (item: GalleryItem) => Promise<void> | void;
 };
 
 type Caption = {
@@ -24,9 +26,12 @@ const fallbackCaption: Caption = {
     "Một món thủ công làm bằng tay. Xem cho vui, như trong phòng trưng bày.",
 };
 
-export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps) {
+export function PhotoDetail({ item, admin = false, onClose, onPrev, onNext, onDelete }: PhotoDetailProps) {
   const [caption, setCaption] = useState<Caption | null>(() => getCachedCaption(item.id));
   const [captionId, setCaptionId] = useState(item.id);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const shown = getCachedCaption(item.id) ?? (captionId === item.id ? caption : null);
   const loading = !shown;
 
@@ -55,6 +60,8 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
 
     setCaption(null);
     setCaptionId(item.id);
+    setConfirmDelete(false);
+    setDeleteError(null);
 
     void (async () => {
       try {
@@ -191,6 +198,50 @@ export function PhotoDetail({ item, onClose, onPrev, onNext }: PhotoDetailProps)
                 <span className="h-px flex-1 bg-[#f0e0c4]" />
               </div>
               <p className="font-serif text-[17px] leading-7 text-ink sm:text-[19px] sm:leading-8">{description}</p>
+              {admin && onDelete ? (
+                <div className="mt-8">
+                  {confirmDelete ? (
+                    <div className="rounded-2xl bg-sand px-4 py-4">
+                      <p className="text-ink">Xóa ảnh này khỏi phòng tranh?</p>
+                      {deleteError ? <p className="mt-2 text-sm text-script">{deleteError}</p> : null}
+                      <div className="mt-4 flex gap-3">
+                        <button
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => setConfirmDelete(false)}
+                          className="min-h-12 flex-1 rounded-full bg-paper text-ink-soft"
+                        >
+                          Không
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => {
+                            setDeleting(true);
+                            setDeleteError(null);
+                            void Promise.resolve(onDelete(item))
+                              .catch((caught) => {
+                                setDeleteError(caught instanceof Error ? caught.message : "Không xóa được.");
+                              })
+                              .finally(() => setDeleting(false));
+                          }}
+                          className="min-h-12 flex-1 rounded-full bg-script text-white"
+                        >
+                          {deleting ? "Đang xóa..." : "Xóa"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(true)}
+                      className="min-h-12 w-full rounded-full border border-[#f0e0c4] bg-paper px-6 text-script sm:w-auto"
+                    >
+                      Xóa ảnh
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </>
           )}
         </div>

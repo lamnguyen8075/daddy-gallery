@@ -12,6 +12,7 @@ export type PhotoAspect = "portrait" | "square" | "landscape";
 
 export type GalleryItem = {
   id: string;
+  path: string;
   title: string;
   category: PhotoCategory;
   image: string;
@@ -31,6 +32,8 @@ const folderToCategory: Record<string, PhotoCategory> = {
   christmas: "Holiday",
   plants: "Plants",
   plant: "Plants",
+  uploads: "Crafts",
+  upload: "Crafts",
 };
 
 export function categoryFromFolder(folder: string): PhotoCategory {

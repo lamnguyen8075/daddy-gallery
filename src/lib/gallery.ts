@@ -73,6 +73,7 @@ function addImage(
   const year = createdAt ? String(new Date(createdAt).getFullYear()) : "";
   items.push({
     id: id ?? storagePath,
+    path: storagePath,
     title: year ? `Photo · ${year}` : "Photo",
     category,
     image: data.publicUrl,
