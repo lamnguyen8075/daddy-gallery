@@ -1,7 +1,7 @@
 import { appBuild, versionedUrl } from "../lib/supabase";
 import { PersonMark } from "./PersonMark";
 
-export type PageId = "home" | "gallery" | "about";
+export type PageId = "home" | "gallery" | "stats" | "about";
 export type AppPage = PageId | "analytics" | "upload";
 
 type HeaderProps = {
@@ -14,6 +14,7 @@ type HeaderProps = {
 const navItems: { id: PageId; label: string }[] = [
   { id: "home", label: "Trang chủ" },
   { id: "gallery", label: "Tác phẩm" },
+  { id: "stats", label: "Thống kê" },
   { id: "about", label: "Giới thiệu" },
 ];
 
@@ -94,7 +95,7 @@ function NavButton({
     <button
       type="button"
       onClick={() => onNavigate(item.id)}
-      className={`relative min-h-11 flex-1 px-2 text-[14px] tracking-wide sm:flex-none sm:px-4 sm:text-[15px] ${
+      className={`relative min-h-11 flex-1 px-1 text-[13px] tracking-wide sm:flex-none sm:px-4 sm:text-[15px] ${
         active ? "font-medium text-ink" : "text-ink-soft"
       }`}
     >

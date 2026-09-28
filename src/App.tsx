@@ -9,8 +9,10 @@ import { GalleryGrid } from "./components/GalleryGrid";
 import { Header, type AppPage, type PageId } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PhotoDetail } from "./components/PhotoDetail";
+import { StatsPage } from "./components/StatsPage";
 import { UploadPage } from "./components/UploadPage";
 import { useGalleryItems } from "./hooks/useGalleryItems";
+import { countFor, usePhotoStats } from "./hooks/usePhotoStats";
 import { isAdminSession, setAdminSession } from "./lib/admin";
 import { logClick } from "./lib/clicks";
 import { clearCachedCaption } from "./lib/captionStore";
@@ -18,6 +20,7 @@ import { deleteGalleryImage } from "./lib/upload";
 
 export default function App() {
   const { items, loading, error, addItem, removeItem, reload } = useGalleryItems();
+  const { counts, addHeart, addView } = usePhotoStats();
   const [page, setPage] = useState<AppPage>("home");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [admin, setAdmin] = useState(isAdminSession);
@@ -30,6 +33,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
     if (view === "nhatky" || view === "clicks") setPage("analytics");
+    else if (view === "thong-ke" || view === "stats") setPage("stats");
     else if (view === "gallery" || view === "about" || view === "home" || view === "upload") {
       setPage(view);
     }
@@ -43,8 +47,11 @@ export default function App() {
   }, [items]);
 
   useEffect(() => {
-    if (selectedId) logClick("photo", selectedId);
-  }, [selectedId]);
+    if (selectedId) {
+      logClick("photo", selectedId);
+      void addView(selectedId);
+    }
+  }, [selectedId, addView]);
 
   function setPhotoInUrl(id: string | null) {
     const url = new URL(window.location.href);
@@ -57,6 +64,7 @@ export default function App() {
     const url = new URL(window.location.href);
     if (next === "home") url.searchParams.delete("view");
     else if (next === "analytics") url.searchParams.set("view", "nhatky");
+    else if (next === "stats") url.searchParams.set("view", "thong-ke");
     else url.searchParams.set("view", next);
     window.history.replaceState({}, "", url);
   }
@@ -146,7 +154,7 @@ export default function App() {
     setPhotoInUrl(items[next].id);
   }
 
-  const showFab = page !== "upload" && page !== "analytics" && !selectedItem;
+  const showFab = page !== "upload" && page !== "analytics" && page !== "stats" && !selectedItem;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-cream pb-[env(safe-area-inset-bottom)]">
@@ -156,13 +164,17 @@ export default function App() {
         <AnalyticsPage items={items} />
       ) : page === "about" ? (
         <AboutPage onExplore={() => navigate("gallery")} />
+      ) : page === "stats" ? (
+        <StatsPage items={items} counts={counts} onSelect={selectItem} />
       ) : (
         <>
           {page === "home" ? <Hero onExplore={openGallery} /> : null}
           {page === "upload" ? null : (
             <GalleryGrid
               items={items}
+              counts={counts}
               onSelect={selectItem}
+              onHeart={(id) => void addHeart(id)}
               heading={page === "gallery" ? "Tất cả tác phẩm" : undefined}
               loading={loading}
               error={error}
@@ -207,6 +219,8 @@ export default function App() {
           onPrev={showPrev}
           onNext={showNext}
           onDelete={admin ? deleteItem : undefined}
+          hearts={countFor(counts, selectedItem.id).hearts}
+          onHeart={() => void addHeart(selectedItem.id)}
         />
       ) : null}
     </div>

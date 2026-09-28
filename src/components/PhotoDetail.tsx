@@ -6,6 +6,7 @@ import {
   setCachedCaption,
 } from "../lib/captionStore";
 import { generateCaption } from "../lib/describe";
+import { HeartMark } from "./HeartMark";
 
 type PhotoDetailProps = {
   item: GalleryItem;
@@ -14,6 +15,8 @@ type PhotoDetailProps = {
   onPrev: () => void;
   onNext: () => void;
   onDelete?: (item: GalleryItem) => Promise<void> | void;
+  hearts?: number;
+  onHeart?: () => void;
 };
 
 type Caption = {
@@ -27,7 +30,16 @@ const fallbackCaption: Caption = {
     "Một món thủ công làm bằng tay. Xem cho vui, như trong phòng trưng bày.",
 };
 
-export function PhotoDetail({ item, admin = false, onClose, onPrev, onNext, onDelete }: PhotoDetailProps) {
+export function PhotoDetail({
+  item,
+  admin = false,
+  onClose,
+  onPrev,
+  onNext,
+  onDelete,
+  hearts = 0,
+  onHeart,
+}: PhotoDetailProps) {
   const [caption, setCaption] = useState<Caption | null>(() => getCachedCaption(item.id));
   const [captionId, setCaptionId] = useState(item.id);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -156,6 +168,20 @@ export function PhotoDetail({ item, admin = false, onClose, onPrev, onNext, onDe
               alt={title || "Ảnh thủ công"}
               className="h-full max-h-[38dvh] w-full object-contain md:absolute md:inset-0 md:max-h-none"
             />
+            {onHeart ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onHeart();
+                }}
+                className="absolute bottom-3 left-3 z-10 flex min-h-11 items-center gap-1.5 rounded-full bg-[#fff8ef]/95 px-3 text-ink shadow-sm ring-1 ring-[#f0e0c4]"
+                aria-label="Thả tim"
+              >
+                <HeartMark className="h-5 w-5" filled={hearts > 0} />
+                <span className="tabular-nums text-ink-soft">{hearts || ""}</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
