@@ -1,11 +1,18 @@
 -- Paste this in Supabase → SQL → New query → Run.
--- Counts hearts and views per photo. No IP limit.
+-- Upvote / downvote + views per photo. No IP limit.
 
 create table if not exists public.anh_dem (
   photo_id text primary key,
   hearts integer not null default 0,
   views integer not null default 0
 );
+
+alter table public.anh_dem add column if not exists upvotes integer not null default 0;
+alter table public.anh_dem add column if not exists downvotes integer not null default 0;
+
+update public.anh_dem
+set upvotes = hearts
+where hearts > upvotes;
 
 alter table public.anh_dem enable row level security;
 
@@ -18,19 +25,27 @@ create policy "Public can read anh_dem"
 
 grant select on public.anh_dem to anon, authenticated;
 
-create or replace function public.cong_tim(p_photo_id text)
-returns integer
+create or replace function public.cong_phieu(p_photo_id text, p_len boolean)
+returns json
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare n integer;
+declare n json;
 begin
-  insert into public.anh_dem (photo_id, hearts, views)
-  values (p_photo_id, 1, 0)
+  insert into public.anh_dem (photo_id, hearts, views, upvotes, downvotes)
+  values (
+    p_photo_id,
+    0,
+    0,
+    case when p_len then 1 else 0 end,
+    case when p_len then 0 else 1 end
+  )
   on conflict (photo_id)
-  do update set hearts = public.anh_dem.hearts + 1
-  returning hearts into n;
+  do update set
+    upvotes = public.anh_dem.upvotes + case when p_len then 1 else 0 end,
+    downvotes = public.anh_dem.downvotes + case when p_len then 0 else 1 end
+  returning json_build_object('upvotes', upvotes, 'downvotes', downvotes) into n;
   return n;
 end;
 $$;
@@ -52,8 +67,27 @@ begin
 end;
 $$;
 
-grant execute on function public.cong_tim(text) to anon, authenticated;
+grant execute on function public.cong_phieu(text, boolean) to anon, authenticated;
 grant execute on function public.cong_xem(text) to anon, authenticated;
+
+create or replace function public.cong_tim(p_photo_id text)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare n integer;
+begin
+  insert into public.anh_dem (photo_id, hearts, views)
+  values (p_photo_id, 1, 0)
+  on conflict (photo_id)
+  do update set hearts = public.anh_dem.hearts + 1
+  returning hearts into n;
+  return n;
+end;
+$$;
+
+grant execute on function public.cong_tim(text) to anon, authenticated;
 
 do $$
 begin

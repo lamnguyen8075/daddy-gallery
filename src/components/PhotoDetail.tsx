@@ -6,6 +6,7 @@ import {
   setCachedCaption,
 } from "../lib/captionStore";
 import { generateCaption } from "../lib/describe";
+import { CommentSection } from "./CommentSection";
 import { HeartMark } from "./HeartMark";
 
 type PhotoDetailProps = {
@@ -175,11 +176,13 @@ export function PhotoDetail({
                   event.stopPropagation();
                   onHeart();
                 }}
-                className="absolute bottom-3 left-3 z-10 flex min-h-11 items-center gap-1.5 rounded-full bg-[#fff8ef]/95 px-3 text-ink shadow-sm ring-1 ring-[#f0e0c4]"
+                className={`absolute bottom-3 left-3 z-10 flex h-11 items-center justify-center rounded-full bg-[#fff8ef]/95 text-ink shadow-sm ring-1 ring-[#f0e0c4] ${
+                  hearts > 0 ? "gap-1.5 px-3.5" : "w-11"
+                }`}
                 aria-label="Thả tim"
               >
-                <HeartMark className="h-5 w-5" filled={hearts > 0} />
-                <span className="tabular-nums text-ink-soft">{hearts || ""}</span>
+                <HeartMark className="block h-5 w-5" filled={hearts > 0} />
+                {hearts > 0 ? <span className="tabular-nums text-ink-soft">{hearts}</span> : null}
               </button>
             ) : null}
           </div>
@@ -215,52 +218,53 @@ export function PhotoDetail({
                 <span className="h-px flex-1 bg-[#f0e0c4]" />
               </div>
               <p className="font-serif text-[17px] leading-7 text-ink sm:text-[19px] sm:leading-8">{description}</p>
-              {admin && onDelete ? (
-                <div className="mt-8">
-                  {confirmDelete ? (
-                    <div className="rounded-2xl bg-sand px-4 py-4">
-                      <p className="text-ink">Xóa ảnh này khỏi phòng tranh?</p>
-                      {deleteError ? <p className="mt-2 text-sm text-script">{deleteError}</p> : null}
-                      <div className="mt-4 flex gap-3">
-                        <button
-                          type="button"
-                          disabled={deleting}
-                          onClick={() => setConfirmDelete(false)}
-                          className="min-h-12 flex-1 rounded-full bg-paper text-ink-soft"
-                        >
-                          Không
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deleting}
-                          onClick={() => {
-                            setDeleting(true);
-                            setDeleteError(null);
-                            void Promise.resolve(onDelete(item))
-                              .catch((caught) => {
-                                setDeleteError(caught instanceof Error ? caught.message : "Không xóa được.");
-                              })
-                              .finally(() => setDeleting(false));
-                          }}
-                          className="min-h-12 flex-1 rounded-full bg-script text-white"
-                        >
-                          {deleting ? "Đang xóa..." : "Xóa"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(true)}
-                      className="min-h-12 w-full rounded-full border border-[#f0e0c4] bg-paper px-6 text-script sm:w-auto"
-                    >
-                      Xóa ảnh
-                    </button>
-                  )}
-                </div>
-              ) : null}
             </>
           )}
+          <CommentSection photoId={item.id} />
+          {admin && onDelete ? (
+            <div className="mt-8">
+              {confirmDelete ? (
+                <div className="rounded-2xl bg-sand px-4 py-4">
+                  <p className="text-ink">Xóa ảnh này khỏi phòng tranh?</p>
+                  {deleteError ? <p className="mt-2 text-sm text-script">{deleteError}</p> : null}
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={() => setConfirmDelete(false)}
+                      className="min-h-12 flex-1 rounded-full bg-paper text-ink-soft"
+                    >
+                      Không
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={() => {
+                        setDeleting(true);
+                        setDeleteError(null);
+                        void Promise.resolve(onDelete(item))
+                          .catch((caught) => {
+                            setDeleteError(caught instanceof Error ? caught.message : "Không xóa được.");
+                          })
+                          .finally(() => setDeleting(false));
+                      }}
+                      className="min-h-12 flex-1 rounded-full bg-script text-white"
+                    >
+                      {deleting ? "Đang xóa..." : "Xóa"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  className="min-h-12 w-full rounded-full border border-[#f0e0c4] bg-paper px-6 text-script sm:w-auto"
+                >
+                  Xóa ảnh
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
       </article>
     </div>
@@ -272,6 +276,14 @@ function useSwipeNav(onPrev: () => void, onNext: () => void) {
 
   return {
     onTouchStart(event: TouchEvent) {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest("input, textarea, button, form")
+      ) {
+        start.current = null;
+        return;
+      }
       const touch = event.changedTouches[0];
       start.current = { x: touch.clientX, y: touch.clientY };
     },

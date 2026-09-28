@@ -34,18 +34,8 @@ export function StatsPage({ items, counts, onSelect }: StatsPageProps) {
           Mười món được thả tim nhiều nhất, và mười món được xem nhiều nhất.
         </p>
 
-        <RankList
-          heading="Nhiều tim nhất"
-          rows={topHearts}
-          valueKey="hearts"
-          onSelect={onSelect}
-        />
-        <RankList
-          heading="Nhiều lượt xem nhất"
-          rows={topViews}
-          valueKey="views"
-          onSelect={onSelect}
-        />
+        <RankList heading="Nhiều tim nhất" rows={topHearts} valueKey="hearts" onSelect={onSelect} />
+        <RankList heading="Nhiều lượt xem nhất" rows={topViews} valueKey="views" onSelect={onSelect} />
       </div>
     </section>
   );

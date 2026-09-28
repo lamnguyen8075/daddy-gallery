@@ -97,3 +97,48 @@ button {
 .washi-sky {
   background: linear-gradient(180deg, rgba(142, 202, 230, 0.88), rgba(126, 186, 214, 0.7));
 }
+
+.comment-thread {
+  scrollbar-width: thin;
+  scrollbar-color: #efd2a0 transparent;
+}
+
+.comment-face {
+  background:
+    radial-gradient(circle at 30% 28%, #fff, #fff8ef 58%, #ffe9c4 120%);
+}
+
+.comment-cloud {
+  --bubble: #fff4e8;
+  position: relative;
+  display: inline-block;
+  max-width: min(100%, 22rem);
+  padding: 0.72rem 1rem 0.78rem;
+  border-radius: 1.7rem 2rem 2rem 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), var(--bubble));
+  box-shadow:
+    0 10px 22px rgba(58, 42, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.comment-cloud::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  background: var(--bubble);
+  border-bottom-right-radius: 3px;
+  transform: rotate(42deg);
+}
+
+.comment-composer {
+  background: linear-gradient(180deg, #fffdf9, #fff6ea);
+  border-radius: 26px;
+  box-shadow:
+    0 10px 24px rgba(58, 42, 34, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  outline: 1px solid rgba(240, 224, 196, 0.95);
+}

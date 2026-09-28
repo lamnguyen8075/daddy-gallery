@@ -7,6 +7,7 @@ export function HeartMark({ className, filled = false }: { className?: string; f
         stroke="#e85d4c"
         strokeWidth="1.7"
         strokeLinejoin="round"
+        transform="translate(0 -0.35)"
       />
     </svg>
   );

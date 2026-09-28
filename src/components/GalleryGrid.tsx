@@ -59,44 +59,46 @@ export function GalleryGrid({
                 {column.map((item) => {
                   const hearts = countFor(counts, item.id).hearts;
                   return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onSelect(item)}
-                    className="group overflow-hidden rounded-[18px] bg-paper text-left shadow-[0_8px_24px_rgba(58,42,34,0.08)] ring-1 ring-[#f0e0c4]"
-                  >
-                    <span className="relative block aspect-[3/4] overflow-hidden bg-sand">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="absolute inset-0 h-full w-full object-contain transition duration-500 group-hover:scale-[1.03]"
-                      />
-                      {onHeart ? (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onHeart(item.id);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onSelect(item)}
+                      className="group overflow-hidden rounded-[18px] bg-paper text-left shadow-[0_8px_24px_rgba(58,42,34,0.08)] ring-1 ring-[#f0e0c4]"
+                    >
+                      <span className="relative block aspect-[3/4] overflow-hidden bg-sand">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="absolute inset-0 h-full w-full object-contain transition duration-500 group-hover:scale-[1.03]"
+                        />
+                        {onHeart ? (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
                               event.stopPropagation();
                               onHeart(item.id);
-                            }
-                          }}
-                          className="absolute bottom-2 left-2 z-10 flex min-h-9 items-center gap-1 rounded-full bg-[#fff8ef]/95 px-2.5 text-sm text-ink shadow-sm ring-1 ring-[#f0e0c4]"
-                          aria-label="Thả tim"
-                        >
-                          <HeartMark className="h-4 w-4" filled={hearts > 0} />
-                          <span className="min-w-[0.75rem] tabular-nums text-ink-soft">
-                            {hearts || ""}
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onHeart(item.id);
+                              }
+                            }}
+                            className={`absolute bottom-2 left-2 z-10 flex h-9 items-center justify-center rounded-full bg-[#fff8ef]/95 text-sm text-ink shadow-sm ring-1 ring-[#f0e0c4] ${
+                              hearts > 0 ? "gap-1 px-2.5" : "w-9"
+                            }`}
+                            aria-label="Thả tim"
+                          >
+                            <HeartMark className="block h-4 w-4" filled={hearts > 0} />
+                            {hearts > 0 ? (
+                              <span className="tabular-nums text-ink-soft">{hearts}</span>
+                            ) : null}
                           </span>
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
+                        ) : null}
+                      </span>
+                    </button>
                   );
                 })}
               </div>

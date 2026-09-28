@@ -17,5 +17,14 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     base: process.env.GITHUB_PAGES === "true" ? "/daddy-gallery/" : "/",
+    server: {
+      port: 5173,
+      strictPort: true,
+      hmr: true,
+      watch: {
+        usePolling: true,
+        interval: 200,
+      },
+    },
   };
 });

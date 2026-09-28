@@ -9,13 +9,13 @@ export type CountsMap = Record<string, PhotoCounts>;
 
 export async function fetchPhotoCounts(): Promise<CountsMap> {
   if (!supabase) return {};
-  const { data, error } = await supabase.from("anh_dem").select("photo_id, hearts, views");
+  const { data, error } = await supabase.from("anh_dem").select("photo_id, hearts, views, upvotes");
   if (error || !data) return {};
   const next: CountsMap = {};
   for (const row of data) {
     if (!row.photo_id) continue;
     next[row.photo_id] = {
-      hearts: Number(row.hearts) || 0,
+      hearts: Math.max(Number(row.hearts) || 0, Number(row.upvotes) || 0),
       views: Number(row.views) || 0,
     };
   }
