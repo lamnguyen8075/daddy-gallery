@@ -158,8 +158,6 @@ export function CommentSection({ photoId }: CommentSectionProps) {
 
       {loading ? (
         <p className="text-sm italic text-ink-soft">Đang tải lời nhắn...</p>
-      ) : rows.length === 0 && !error ? (
-        <p className="text-ink-soft">Chưa có lời nhắn. Viết vài chữ nhé.</p>
       ) : rows.length > 0 ? (
         <div className="comment-thread max-h-[min(22rem,44vh)] space-y-4 overflow-y-auto overscroll-contain py-1 pr-1">
           {rows.map((row) => {
