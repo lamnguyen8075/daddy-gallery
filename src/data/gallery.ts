@@ -20,6 +20,7 @@ export type GalleryItem = {
   year: string;
   memory: string;
   aspect: PhotoAspect;
+  createdAt?: string;
 };
 
 const folderToCategory: Record<string, PhotoCategory> = {

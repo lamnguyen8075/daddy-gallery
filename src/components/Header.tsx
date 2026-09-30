@@ -1,4 +1,6 @@
 import { appBuild, versionedUrl } from "../lib/supabase";
+import type { GalleryItem } from "../data/gallery";
+import { ActivityBelt } from "./ActivityBelt";
 import { PersonMark } from "./PersonMark";
 
 export type PageId = "home" | "gallery" | "stats" | "about";
@@ -7,8 +9,10 @@ export type AppPage = PageId | "analytics" | "upload";
 type HeaderProps = {
   page: AppPage;
   admin?: boolean;
+  items?: GalleryItem[];
   onNavigate: (page: PageId) => void;
   onAdmin: () => void;
+  onSelectPhoto?: (item: GalleryItem) => void;
 };
 
 const navItems: { id: PageId; label: string }[] = [
@@ -18,7 +22,14 @@ const navItems: { id: PageId; label: string }[] = [
   { id: "about", label: "Giới thiệu" },
 ];
 
-export function Header({ page, admin = false, onNavigate, onAdmin }: HeaderProps) {
+export function Header({
+  page,
+  admin = false,
+  items = [],
+  onNavigate,
+  onAdmin,
+  onSelectPhoto,
+}: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-[#f0e0c4]/90 bg-[#fff8ef]/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto max-w-[1240px] px-4 py-3 sm:px-5 sm:py-4 lg:px-8">
@@ -54,6 +65,7 @@ export function Header({ page, admin = false, onNavigate, onAdmin }: HeaderProps
                 />
               ))}
             </nav>
+            {onSelectPhoto ? <ActivityBelt items={items} onSelect={onSelectPhoto} /> : null}
             <button
               type="button"
               onClick={onAdmin}

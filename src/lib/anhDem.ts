@@ -1,3 +1,4 @@
+import { logActivity } from "./bangTin";
 import { supabase } from "./supabase";
 
 export type PhotoCounts = {
@@ -26,6 +27,7 @@ export async function addHeart(photoId: string): Promise<number | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("cong_tim", { p_photo_id: photoId });
   if (error) return null;
+  logActivity({ kind: "tim", photoId });
   return typeof data === "number" ? data : Number(data) || null;
 }
 

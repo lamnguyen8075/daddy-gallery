@@ -158,7 +158,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-cream pb-[env(safe-area-inset-bottom)]">
-      <Header page={page} admin={admin} onNavigate={navigate} onAdmin={toggleAdmin} />
+      <Header
+        page={page}
+        admin={admin}
+        items={items}
+        onNavigate={navigate}
+        onAdmin={toggleAdmin}
+        onSelectPhoto={selectItem}
+      />
 
       {page === "analytics" ? (
         <AnalyticsPage items={items} />

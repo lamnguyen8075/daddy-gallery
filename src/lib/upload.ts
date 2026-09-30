@@ -1,5 +1,6 @@
 import type { GalleryItem } from "../data/gallery";
 import { isImageFile } from "../data/gallery";
+import { logActivity } from "./bangTin";
 import { captionObjectPath } from "./captions";
 import { galleryBucket, isSupabaseConfigured, supabase, versionedUrl } from "./supabase";
 
@@ -104,18 +105,20 @@ export async function uploadGalleryImage(file: File): Promise<GalleryItem> {
   const stored = files?.find((entry) => entry.name === name);
   const { data } = supabase.storage.from(galleryBucket).getPublicUrl(path);
   const year = String(new Date().getFullYear());
-
-  return {
+  const item = {
     id: stored?.id ?? path,
     path,
     title: "Ảnh mới gửi",
-    category: "Crafts",
+    category: "Crafts" as const,
     image: versionedUrl(data.publicUrl, stored?.updated_at ?? String(Date.now())),
     maker: "",
     year,
     memory: "",
-    aspect: "portrait",
+    aspect: "portrait" as const,
+    createdAt: stored?.created_at ?? new Date().toISOString(),
   };
+  logActivity({ kind: "anh", photoId: item.id });
+  return item;
 }
 
 export async function deleteGalleryImage(item: GalleryItem) {

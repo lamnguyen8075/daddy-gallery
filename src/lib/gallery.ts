@@ -83,6 +83,7 @@ function addImage(file: StorageFile, prefix: string, category: PhotoCategory, it
     year,
     memory: "",
     aspect: "portrait",
+    createdAt: file.created_at ?? undefined,
   });
 }
 

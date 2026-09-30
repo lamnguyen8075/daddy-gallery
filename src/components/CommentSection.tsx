@@ -16,11 +16,15 @@ type CommentSectionProps = {
 };
 
 function formatWhen(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 function errorText(caught: unknown) {

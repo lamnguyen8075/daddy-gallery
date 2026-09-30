@@ -1,3 +1,4 @@
+import { logActivity } from "./bangTin";
 import { supabase } from "./supabase";
 
 export type CommentRow = {
@@ -93,7 +94,9 @@ export async function addComment(photoId: string, body: string): Promise<Comment
     );
   }
 
-  return asComment(data);
+  const next = asComment(data);
+  logActivity({ kind: "binh_luan", photoId, name: next.name, body: next.body });
+  return next;
 }
 
 export { maxBody };
