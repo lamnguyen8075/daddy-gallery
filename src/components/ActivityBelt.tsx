@@ -73,7 +73,13 @@ export function ActivityBelt({ items, onSelect }: ActivityBeltProps) {
     if (item) onSelect(item);
   }
 
-  const fresh = rows.some((row) => Date.now() - new Date(row.createdAt).getTime() < 24 * 60 * 60 * 1000);
+  const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const freshComment = rows.some(
+    (row) => row.kind === "binh_luan" && new Date(row.createdAt).getTime() > dayAgo,
+  );
+  const fresh =
+    freshComment ||
+    rows.some((row) => row.kind !== "binh_luan" && new Date(row.createdAt).getTime() > dayAgo);
 
   return (
     <div ref={root} className="relative">

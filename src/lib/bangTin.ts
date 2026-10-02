@@ -51,7 +51,6 @@ export async function fetchActivity(
 ): Promise<ActivityRow[]> {
   if (!supabase) return [];
   const since = sinceIso();
-  const rows: ActivityRow[] = [];
 
   const [hearts, comments] = await Promise.all([
     supabase
@@ -60,23 +59,21 @@ export async function fetchActivity(
       .eq("kind", "tim")
       .gt("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(40),
+      .limit(12),
     supabase
       .from("binh_luan")
       .select("id, photo_id, ten, noi_dung, created_at")
       .gt("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(40),
+      .limit(30),
   ]);
 
-  for (const row of hearts.data ?? []) {
-    const next = asHeart(row);
-    if (next) rows.push(next);
-  }
+  const notes: ActivityRow[] = [];
+  const rest: ActivityRow[] = [];
 
   for (const row of comments.data ?? []) {
     if (!row.created_at) continue;
-    rows.push({
+    notes.push({
       id: row.id,
       kind: "binh_luan",
       photoId: row.photo_id,
@@ -86,20 +83,33 @@ export async function fetchActivity(
     });
   }
 
-  for (const photo of photos) {
-    if (!photo.createdAt || photo.createdAt <= since) continue;
-    rows.push({
+  for (const row of hearts.data ?? []) {
+    const next = asHeart(row);
+    if (next) rest.push(next);
+  }
+
+  const uploads = photos
+    .filter((photo) => photo.createdAt && photo.createdAt > since)
+    .sort((a, b) => ((a.createdAt ?? "") < (b.createdAt ?? "") ? 1 : -1))
+    .slice(0, 8);
+  for (const photo of uploads) {
+    rest.push({
       id: `anh:${photo.id}`,
       kind: "anh",
       photoId: photo.id,
       name: "",
       body: "",
-      createdAt: photo.createdAt,
+      createdAt: photo.createdAt ?? "",
     });
   }
 
-  rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
-  return rows.slice(0, 40);
+  notes.sort(newerFirst);
+  rest.sort(newerFirst);
+  return [...notes, ...rest.slice(0, 12)];
+}
+
+function newerFirst(a: ActivityRow, b: ActivityRow) {
+  return a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0;
 }
 
 export function logActivity(input: {
