@@ -52,7 +52,7 @@ jobs:
             exit 0
           fi
           supabase functions deploy describe --project-ref fyaabujafqenjewdvjhu --yes
-          supabase secrets set "MINIMAX_API_KEY=$MINIMAX_API_KEY" --project-ref fyaabujafqenjewdvjhu
+          supabase secrets set "MINIMAX_API_KEY=$MINIMAX_API_KEY" --project-ref fyaabujafqenjewdvjhu --yes
 
   deploy:
     needs: build
