@@ -172,3 +172,57 @@ button {
     0 8px 16px rgba(58, 42, 34, 0.1),
     0 0 0 1px rgba(240, 224, 196, 0.8);
 }
+
+.location-map {
+  z-index: 0;
+  background: #e7f2e4;
+  touch-action: none;
+}
+
+.location-map .leaflet-control-zoom {
+  margin-top: 12px;
+  margin-left: 12px;
+  border: 0;
+  box-shadow: 0 6px 16px rgba(58, 42, 34, 0.16);
+}
+
+.location-map.leaflet-touch .leaflet-control-zoom a,
+.location-map .leaflet-control-zoom a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 22px;
+  color: #3a2a22;
+}
+
+.location-map .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+.location-map img {
+  max-width: none;
+  max-height: none;
+}
+
+.location-pin {
+  background: transparent;
+  border: 0;
+}
+
+.location-pin span {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #2f9e5a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(58, 42, 34, 0.28);
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}

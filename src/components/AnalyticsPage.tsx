@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { GalleryItem } from "../data/gallery";
 import { fetchClicks, type ClickRow } from "../lib/clicks";
+import { LocationMap } from "./LocationMap";
 
 const TIME_ZONE = "Asia/Ho_Chi_Minh";
 const DAY_COUNT = 14;
@@ -127,6 +128,7 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
 
   const maxDay = Math.max(1, ...byDay.map((entry) => entry.count));
   const maxLabel = Math.max(1, ...byLabel.map((entry) => entry.count));
+  const located = byLocation.filter((entry) => entry.label !== "Chưa rõ nơi");
   const maxLocation = Math.max(1, ...byLocation.map((entry) => entry.count));
   const todayCount = byDay.find((entry) => entry.day === todayKey())?.count ?? 0;
   const photoCount = rows.filter((row) => row.kind === "photo").length;
@@ -195,24 +197,27 @@ export function AnalyticsPage({ items }: AnalyticsPageProps) {
           {byLocation.length === 0 ? (
             <p className="mt-4 text-ink-soft">Chưa có vị trí nào ghi nhận.</p>
           ) : (
-            <ScrollList>
-              <ul className="space-y-3">
-                {byLocation.map((entry) => (
-                  <li key={entry.label}>
-                    <div className="flex items-baseline justify-between gap-3 text-sm">
-                      <span className="truncate text-ink">{entry.label}</span>
-                      <span className="shrink-0 text-ink-soft">{entry.count}</span>
-                    </div>
-                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
-                      <div
-                        className="h-full rounded-full bg-sky"
-                        style={{ width: `${(entry.count / maxLocation) * 100}%` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </ScrollList>
+            <>
+              {located.length > 0 ? <LocationMap places={located} /> : null}
+              <ScrollList>
+                <ul className="space-y-3">
+                  {byLocation.map((entry) => (
+                    <li key={entry.label}>
+                      <div className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="truncate text-ink">{entry.label}</span>
+                        <span className="shrink-0 text-ink-soft">{entry.count}</span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-sand">
+                        <div
+                          className="h-full rounded-full bg-sky"
+                          style={{ width: `${(entry.count / maxLocation) * 100}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollList>
+            </>
           )}
         </div>
 
