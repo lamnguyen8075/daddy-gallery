@@ -175,8 +175,17 @@ button {
 
 .location-map {
   z-index: 0;
+  overflow: hidden;
+  border-radius: 1rem;
   background: #e7f2e4;
+  box-shadow: 0 0 0 1px #f0e0c4;
   touch-action: none;
+}
+
+.location-map img.leaflet-tile {
+  mix-blend-mode: normal !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .location-map .leaflet-control-zoom {
@@ -199,10 +208,6 @@ button {
   font-size: 10px;
 }
 
-.location-map img {
-  max-width: none;
-  max-height: none;
-}
 
 .location-pin {
   background: transparent;

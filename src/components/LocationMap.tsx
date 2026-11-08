@@ -58,9 +58,17 @@ export function LocationMap({ places }: { places: Place[] }) {
         maxZoom: 16,
       }).addTo(map);
       mapRef.current = map;
-      const observer = new ResizeObserver(() => map.invalidateSize());
+      const redraw = () => map.invalidateSize();
+      const observer = new ResizeObserver(redraw);
       observer.observe(node);
-      map.on("unload", () => observer.disconnect());
+      const onScreen = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) redraw();
+      });
+      onScreen.observe(node);
+      map.on("unload", () => {
+        observer.disconnect();
+        onScreen.disconnect();
+      });
     }
 
     const map = mapRef.current;
@@ -123,7 +131,7 @@ export function LocationMap({ places }: { places: Place[] }) {
 
   return (
     <div className="mt-4">
-      <div className="relative h-[22rem] overflow-hidden rounded-2xl ring-1 ring-[#f0e0c4] sm:h-80">
+      <div className="relative h-[22rem] sm:h-80">
         <div ref={host} className="location-map h-full w-full" />
         {status === "loading" ? (
           <p className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-3 py-1 text-[12px] text-ink-soft">
