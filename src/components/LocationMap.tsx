@@ -50,10 +50,13 @@ export function LocationMap({ places }: { places: Place[] }) {
         boxZoom: false,
         keyboard: true,
         zoomControl: true,
+        fadeAnimation: false,
+        zoomAnimation: false,
+        markerZoomAnimation: false,
         minZoom: 2,
         maxZoom: 16,
       }).setView([16, 107], 2);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap",
         maxZoom: 16,
       }).addTo(map);
